@@ -12,16 +12,14 @@ namespace RGN.Modules.EmailSignIn
         {
             this.rgnCore = rgnCore;
         }
-
-        public void Init()
-        {
-        }
+        public void Init() { }
+        public void Dispose() { }
 
         public void OnSignUpWithEmail(string email, string password)
         {
-            var credential = rgnCore.readyMasterAuth.emailAuthProvider.GetCredential(email, password);
+            var credential = rgnCore.ReadyMasterAuth.emailAuthProvider.GetCredential(email, password);
 
-            rgnCore.readyMasterAuth.CurrentUser.LinkAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task =>
+            rgnCore.ReadyMasterAuth.CurrentUser.LinkAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task =>
             {
                 if (task.IsCanceled)
                 {
@@ -54,7 +52,7 @@ namespace RGN.Modules.EmailSignIn
                     return;
                 }
 
-                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: LinkWith Email/Password Successful. " + rgnCore.readyMasterAuth.CurrentUser.UserId + " ");
+                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: LinkWith Email/Password Successful. " + rgnCore.ReadyMasterAuth.CurrentUser.UserId + " ");
 
                 rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
             },
@@ -63,7 +61,7 @@ namespace RGN.Modules.EmailSignIn
 
         public void OnSignInWithEmail(string email, string password)
         {
-            rgnCore.readyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task =>
+            rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task =>
             {
                 if (task.IsCanceled)
                 {
@@ -85,7 +83,7 @@ namespace RGN.Modules.EmailSignIn
 
         public void SendPasswordResetEmail(string email)
         {
-            rgnCore.readyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task =>
+            rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task =>
             {
                 if (task.IsCanceled)
                 {
