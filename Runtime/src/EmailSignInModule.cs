@@ -2,9 +2,9 @@ using Firebase;
 using Firebase.Auth;
 using System.Threading.Tasks;
 
-namespace RGN.Modules.EmailSignIn
+namespace RGN.Modules.SignIn
 {
-    public class EmailSignInModule : IRGNModule
+    public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
         private IRGNRolesCore rgnCore;
 
