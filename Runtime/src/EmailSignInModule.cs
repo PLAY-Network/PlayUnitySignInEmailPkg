@@ -36,17 +36,19 @@ namespace RGN.Modules.SignIn
                         rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
                         return;
                     }
-
+                    
                     FirebaseException firebaseException = task.Exception.InnerException as FirebaseException;
-                    if (firebaseException != null && firebaseException.ErrorCode == (int)AuthError.EmailAlreadyInUse)
+                    
+                    if (firebaseException != null)
                     {
-                        rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
-                        return;
-                    }
-
-                    if (firebaseException != null && firebaseException.ErrorCode == (int)AuthError.ProviderAlreadyLinked)
-                    {
-                        rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
+                        EnumLoginError loginError = (AuthError)firebaseException.ErrorCode switch {
+                            AuthError.EmailAlreadyInUse => EnumLoginError.AccountAlreadyLinked,
+                            AuthError.ProviderAlreadyLinked => EnumLoginError.AccountAlreadyLinked,
+                            AuthError.RequiresRecentLogin => EnumLoginError.AccountNeedsRecentLogin,
+                            _ => EnumLoginError.Unknown
+                        };
+                        
+                        rgnCore.SetAuthCompletion(EnumLoginState.Error, loginError);
                         return;
                     }
 
