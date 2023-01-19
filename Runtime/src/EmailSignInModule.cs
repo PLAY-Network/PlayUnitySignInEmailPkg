@@ -15,9 +15,47 @@ namespace RGN.Modules.SignIn
         public void Init() { }
         public void Dispose() { }
 
-        public void OnSignUpWithEmail(string email, string password)
+        public void TryToSignIn(string email, string password, bool tryToLinkToCurrentAccount = false)
         {
-            rgnCore.Dependencies.Logger.Log("EmailSignInModule]: OnSignUpWithEmail(" + email + ", " + string.IsNullOrEmpty(password) + ")");
+            if (tryToLinkToCurrentAccount)
+            {
+                TryToLink(email, password);
+            }
+            else
+            {
+                TryToSingInWithoutLink(email, password);
+            }
+        }
+        public void SendPasswordResetEmail(string email)
+        {
+            rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
+                if (task.IsCanceled)
+                {
+                    rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync was canceled.");
+                    return;
+                }
+
+                if (task.IsFaulted)
+                {
+                    Utility.ExceptionHelper.PrintToLog(rgnCore.Dependencies.Logger, task.Exception);
+                    rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync encountered an error: " +
+                                   task.Exception);
+                    return;
+                }
+
+                SignOut();
+                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Password reset email sent successfully.");
+            },
+            TaskScheduler.FromCurrentSynchronizationContext());
+        }
+        public void SignOut()
+        {
+            rgnCore.SignOutRGN();
+        }
+
+        private void TryToLink(string email, string password)
+        {
+            rgnCore.Dependencies.Logger.Log("EmailSignInModule]: TryToSignIn(" + email + ", " + string.IsNullOrEmpty(password) + ")");
             var credential = rgnCore.ReadyMasterAuth.emailAuthProvider.GetCredential(email, password);
 
             rgnCore.ReadyMasterAuth.CurrentUser.LinkAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task => {
@@ -36,9 +74,9 @@ namespace RGN.Modules.SignIn
                         rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
                         return;
                     }
-                    
+
                     FirebaseException firebaseException = task.Exception.InnerException as FirebaseException;
-                    
+
                     if (firebaseException != null)
                     {
                         EnumLoginError loginError = (AuthError)firebaseException.ErrorCode switch {
@@ -47,7 +85,7 @@ namespace RGN.Modules.SignIn
                             AuthError.RequiresRecentLogin => EnumLoginError.AccountNeedsRecentLogin,
                             _ => EnumLoginError.Unknown
                         };
-                        
+
                         rgnCore.SetAuthCompletion(EnumLoginState.Error, loginError);
                         return;
                     }
@@ -62,21 +100,20 @@ namespace RGN.Modules.SignIn
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
-
-        public void OnSignInWithEmail(string email, string password)
+        private void TryToSingInWithoutLink(string email, string password)
         {
             rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task => {
                 if (task.IsCanceled)
                 {
                     rgnCore.Dependencies.Logger.LogWarning("EmailSignInModule]: SignInWithEmailAndPasswordAsync was cancelled");
-                    SignOutFromEmail();
+                    SignOut();
                     return;
                 }
 
                 if (task.IsFaulted)
                 {
                     Utility.ExceptionHelper.PrintToLog(rgnCore.Dependencies.Logger, task.Exception);
-                    SignOutFromEmail();
+                    SignOut();
                     rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
                     return;
                 }
@@ -84,34 +121,6 @@ namespace RGN.Modules.SignIn
                 rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, signed in");
             },
             TaskScheduler.FromCurrentSynchronizationContext());
-        }
-
-        public void SendPasswordResetEmail(string email)
-        {
-            rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
-                if (task.IsCanceled)
-                {
-                    rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync was canceled.");
-                    return;
-                }
-
-                if (task.IsFaulted)
-                {
-                    Utility.ExceptionHelper.PrintToLog(rgnCore.Dependencies.Logger, task.Exception);
-                    rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync encountered an error: " +
-                                   task.Exception);
-                    return;
-                }
-
-                SignOutFromEmail();
-                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Password reset email sent successfully.");
-            },
-            TaskScheduler.FromCurrentSynchronizationContext());
-        }
-
-        public void SignOutFromEmail()
-        {
-            rgnCore.SignOutRGN();
         }
     }
 }
