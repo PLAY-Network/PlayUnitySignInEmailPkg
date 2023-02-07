@@ -33,7 +33,7 @@ namespace RGN.Modules.SignIn
         {
             _rgnDeepLink.OpenURL();
         }
-        private void OnTokenReceived(string token)
+        private async void OnTokenReceived(string token)
         {
             rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: Token received: " + token);
             if (string.IsNullOrEmpty(token))
@@ -42,6 +42,7 @@ namespace RGN.Modules.SignIn
             }
             else
             {
+                await rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
                 rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
             }
         }
