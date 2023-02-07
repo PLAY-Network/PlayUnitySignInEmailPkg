@@ -16,7 +16,7 @@ namespace RGN.Modules.SignIn
         public void Init()
         {
             _rgnDeepLink = new RGNDeepLink();
-            _rgnDeepLink.Init();
+            _rgnDeepLink.Init(rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceived;
         }
         public void Dispose()

@@ -23,13 +23,15 @@ namespace RGN.MyEditor
 
         private void AddSchemes()
         {
-            if (!PlayerSettings.iOS.iOSUrlSchemes.Contains("unitydl"))
+            string packageNameScheme = PlayerSettings.applicationIdentifier.ToLower().Replace(".", string.Empty);
+
+            if (!PlayerSettings.iOS.iOSUrlSchemes.Contains(packageNameScheme))
             {
                 List<string> schemes = new List<string>();
                 schemes = PlayerSettings.iOS.iOSUrlSchemes.ToList();
-                schemes.Add("unitydl");
+                schemes.Add(packageNameScheme);
                 PlayerSettings.iOS.iOSUrlSchemes = schemes.ToArray();
-                Debug.Log("New URL schemes added : unitydl");
+                Debug.Log("New URL schemes added : " + packageNameScheme);
             }
         }
     }

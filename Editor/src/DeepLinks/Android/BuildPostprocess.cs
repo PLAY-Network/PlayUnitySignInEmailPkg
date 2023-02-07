@@ -22,16 +22,18 @@ namespace RGN.MyEditor
 
         private void HandleAndroid()
         {
+            string packageNameScheme = PlayerSettings.applicationIdentifier.ToLower().Replace(".", string.Empty);
+
             string manifestPath = Application.dataPath + "/Plugins/Android/AndroidManifest.xml";
             if (File.Exists(manifestPath))
             {
                 Debug.Log("[EmailSignIn]: Found AndroidManifest at " + manifestPath);
                 string manifestContent = File.ReadAllText(manifestPath);
-                const string NEW_INTENT = "<intent-filter>" +
+                string NEW_INTENT = "<intent-filter>" +
                     "<action android:name=\"android.intent.action.VIEW\" />" +
                     "<category android:name=\"android.intent.category.DEFAULT\" />" +
                     "<category android:name=\"android.intent.category.BROWSABLE\" />" +
-                    "<data android:scheme=\"unitydl\" android:host=\"RGNSignIn\" />" + // TODO Edit link here
+                    "<data android:scheme=" + packageNameScheme + "android:host=\"\" />" +
                     "</intent-filter>";
 
                 if (!manifestContent.Contains(NEW_INTENT))

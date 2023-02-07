@@ -11,21 +11,39 @@ namespace RGN.Modules.SignIn
 
         private bool _initialized;
 
-        internal void Init()
+        internal void Init(IRGNRolesCore rGNCore)
         {
 #if UNITY_STANDALONE_WIN
             WindowsDeepLinks.StartHandling();
+            WindowsDeepLinks.DeepLinkActivated += onDeepLinkActivated;
+            rGNCore.UpdateEvent += () => WindowsDeepLinks.Tick();
 #endif
+
             Application.deepLinkActivated += OnDeepLinkActivated;
+
             if (!string.IsNullOrEmpty(Application.absoluteURL))
             {
                 // Cold start and Application.absoluteURL not null so process Deep Link.
                 OnDeepLinkActivated(Application.absoluteURL);
             }
         }
+
+
+        private void OnApplicationQuit()
+        {
+#if UNITY_STANDALONE_WIN
+        WindowsDeepLinks.Dispose();
+        WindowsDeepLinks.DeepLinkActivated -= onDeepLinkActivated;
+#endif
+        }
+
         public void Dispose()
         {
             Application.deepLinkActivated -= OnDeepLinkActivated;
+#if UNITY_STANDALONE_WIN
+            WindowsDeepLinks.DeepLinkActivated -= onDeepLinkActivated;
+            WindowsDeepLinks.Dispose();
+#endif
             TokenReceived = null;
         }
 
@@ -46,7 +64,6 @@ namespace RGN.Modules.SignIn
 
             string token = parsedParameters["token"]; // TODO Do something with the token
 
-            Debug.Log(token);
             TokenReceived?.Invoke(token);
         }
     }
