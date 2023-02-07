@@ -6,7 +6,7 @@ namespace RGN.Modules.SignIn
     internal sealed class RGNDeepLink : System.IDisposable
     {
         internal event Action<string> TokenReceived;
-        const string signInURL = "https://rgn-auth.web.app";
+        const string signInURL = "https://rgn-auth.web.app?redirect_url=deep_link_for_this_app";
         public string deeplinkURL;
 
         private bool _initialized;
