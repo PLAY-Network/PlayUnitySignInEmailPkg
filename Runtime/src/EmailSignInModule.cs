@@ -1,19 +1,50 @@
+using System.Threading.Tasks;
 using Firebase;
 using Firebase.Auth;
-using System.Threading.Tasks;
 
 namespace RGN.Modules.SignIn
 {
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
         private IRGNRolesCore rgnCore;
+        private RGNDeepLink _rgnDeepLink;
 
         public void SetRGNCore(IRGNRolesCore rgnCore)
         {
             this.rgnCore = rgnCore;
         }
-        public void Init() { }
-        public void Dispose() { }
+        public void Init()
+        {
+            _rgnDeepLink = new RGNDeepLink();
+            _rgnDeepLink.Init();
+            _rgnDeepLink.TokenReceived += OnTokenReceived;
+        }
+        public void Dispose()
+        {
+            if (_rgnDeepLink != null)
+            {
+                _rgnDeepLink.TokenReceived -= OnTokenReceived;
+                _rgnDeepLink.Dispose();
+                _rgnDeepLink = null;
+            }
+        }
+
+        public void TryToSignIn()
+        {
+            _rgnDeepLink.OpenURL();
+        }
+        private void OnTokenReceived(string token)
+        {
+            rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: Token received: " + token);
+            if (string.IsNullOrEmpty(token))
+            {
+                rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+            }
+            else
+            {
+                rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
+            }
+        }
 
         public void TryToSignIn(string email, string password, bool tryToLinkToCurrentAccount = false)
         {
