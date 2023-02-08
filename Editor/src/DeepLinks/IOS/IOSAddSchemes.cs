@@ -1,6 +1,7 @@
 #if UNITY_EDITOR && PLATFORM_IOS
 using System.Collections.Generic;
 using System.Linq;
+using RGN.Modules.SignIn;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
@@ -23,15 +24,16 @@ namespace RGN.MyEditor
 
         private void AddSchemes()
         {
-            string packageNameScheme = PlayerSettings.applicationIdentifier.ToLower().Replace(".", string.Empty);
+            string packageNameScheme = RGNHttpUtility.GetSanitizedApplicationIdentifier();
+            string path = RGNHttpUtility.EMAIL_SIGN_IN_PATH;
+            string urlScheme = packageNameScheme + ":" + path;
 
-            if (!PlayerSettings.iOS.iOSUrlSchemes.Contains(packageNameScheme))
+            if (!PlayerSettings.iOS.iOSUrlSchemes.Contains(urlScheme))
             {
-                List<string> schemes = new List<string>();
-                schemes = PlayerSettings.iOS.iOSUrlSchemes.ToList();
-                schemes.Add(packageNameScheme);
+                List<string> schemes = PlayerSettings.iOS.iOSUrlSchemes.ToList();
+                schemes.Add(urlScheme);
                 PlayerSettings.iOS.iOSUrlSchemes = schemes.ToArray();
-                Debug.Log("New URL schemes added : " + packageNameScheme);
+                Debug.Log("New URL schemes added : " + urlScheme);
             }
         }
     }

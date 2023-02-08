@@ -5,20 +5,26 @@ namespace RGN.Modules.SignIn
 {
     internal sealed class RGNDeepLink : System.IDisposable
     {
-        internal event Action<string> TokenReceived;
-        const string signInURL = "https://rgn-auth.web.app/?url_redirect=";
-        public string deeplinkURL;
+        private const string SIGN_IN_URL = "https://rgn-auth.web.app/?url_redirect=";
 
+        internal event Action<string> TokenReceived;
+
+        private string _finalSignInUrl;
         private bool _initialized;
 
         internal void Init(IRGNRolesCore rGNCore)
         {
+            if (_initialized)
+            {
+                return;
+            }
 #if UNITY_STANDALONE_WIN
             WindowsDeepLinks.StartHandling();
-            WindowsDeepLinks.DeepLinkActivated += onDeepLinkActivated;
+            WindowsDeepLinks.DeepLinkActivated += OnDeepLinkActivated;
             rGNCore.UpdateEvent += () => WindowsDeepLinks.Tick();
 #endif
-
+            string redirectUrl = RGNHttpUtility.GetDeepLinkRedirectUrlForEmailSignIn();
+            _finalSignInUrl = SIGN_IN_URL + redirectUrl;
             Application.deepLinkActivated += OnDeepLinkActivated;
 
             if (!string.IsNullOrEmpty(Application.absoluteURL))
@@ -26,6 +32,7 @@ namespace RGN.Modules.SignIn
                 // Cold start and Application.absoluteURL not null so process Deep Link.
                 OnDeepLinkActivated(Application.absoluteURL);
             }
+            _initialized = true;
         }
 
 
@@ -33,7 +40,7 @@ namespace RGN.Modules.SignIn
         {
 #if UNITY_STANDALONE_WIN
         WindowsDeepLinks.Dispose();
-        WindowsDeepLinks.DeepLinkActivated -= onDeepLinkActivated;
+        WindowsDeepLinks.DeepLinkActivated -= OnDeepLinkActivated;
 #endif
         }
 
@@ -41,7 +48,7 @@ namespace RGN.Modules.SignIn
         {
             Application.deepLinkActivated -= OnDeepLinkActivated;
 #if UNITY_STANDALONE_WIN
-            WindowsDeepLinks.DeepLinkActivated -= onDeepLinkActivated;
+            WindowsDeepLinks.DeepLinkActivated -= OnDeepLinkActivated;
             WindowsDeepLinks.Dispose();
 #endif
             TokenReceived = null;
@@ -49,17 +56,12 @@ namespace RGN.Modules.SignIn
 
         internal void OpenURL()
         {
-            string redirectUrl = Application.identifier.ToLower().Replace(".", string.Empty);
-            Application.OpenURL(signInURL + redirectUrl); // Send the deeplink redirect url
+            Application.OpenURL(_finalSignInUrl); // Send the deeplink redirect url
         }
 
         private void OnDeepLinkActivated(string url)
         {
             Debug.Log("OnDeepLinkActivated with url: " + url);
-            // Update DeepLink Manager global variable, so URL can be accessed from anywhere.
-            deeplinkURL = url;
-
-            // Decode the URL
             string parameters = url.Split("?"[0])[1];
             var parsedParameters = RGNHttpUtility.ParseQueryString(parameters);
 

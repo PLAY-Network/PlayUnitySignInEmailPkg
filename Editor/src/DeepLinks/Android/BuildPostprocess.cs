@@ -1,4 +1,5 @@
 using System.IO;
+using RGN.Modules.SignIn;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -22,19 +23,20 @@ namespace RGN.MyEditor
 
         private void HandleAndroid()
         {
-            string packageNameScheme = PlayerSettings.applicationIdentifier.ToLower().Replace(".", string.Empty);
+            string packageNameScheme = RGNHttpUtility.GetSanitizedApplicationIdentifier();
+            string path = RGNHttpUtility.EMAIL_SIGN_IN_PATH;
 
             string manifestPath = Application.dataPath + "/Plugins/Android/AndroidManifest.xml";
             if (File.Exists(manifestPath))
             {
                 Debug.Log("[EmailSignIn]: Found AndroidManifest at " + manifestPath);
                 string manifestContent = File.ReadAllText(manifestPath);
-                string NEW_INTENT = "<intent-filter>" +
-                    "<action android:name=\"android.intent.action.VIEW\" />" +
-                    "<category android:name=\"android.intent.category.DEFAULT\" />" +
-                    "<category android:name=\"android.intent.category.BROWSABLE\" />" +
-                    "<data android:scheme=" + packageNameScheme + "android:host=\"\" />" +
-                    "</intent-filter>";
+                string NEW_INTENT = "<intent-filter>\n" +
+                    "<action android:name=\"android.intent.action.VIEW\"/>\n" +
+                    "<category android:name=\"android.intent.category.DEFAULT\"/>\n" +
+                    "<category android:name=\"android.intent.category.BROWSABLE\"/>\n" +
+                    "<data android:scheme=\"" + packageNameScheme + "\" android:host=\"localhost\" android:path=\"" + path + "\"/>\n" +
+                    "</intent-filter>\n";
 
                 if (!manifestContent.Contains(NEW_INTENT))
                 {

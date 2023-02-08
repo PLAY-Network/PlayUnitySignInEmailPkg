@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Specialized;
+using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
-    internal static class RGNHttpUtility
+    public static class RGNHttpUtility
     {
+        public const string EMAIL_SIGN_IN_PATH = "emailSignIn";
+
         public static NameValueCollection ParseQueryString(string query)
         {
             var ret = new NameValueCollection();
@@ -24,6 +27,27 @@ namespace RGN.Modules.SignIn
                 }
             }
             return ret;
+        }
+        public static string GetDeepLinkRedirectUrlForEmailSignIn()
+        {
+            string appIdentifier = GetSanitizedApplicationIdentifier();
+#if UNITY_ANDROID
+            // <scheme>://<host>:<port>/<path>
+            string redirectUrl = appIdentifier + "://localhost/" + EMAIL_SIGN_IN_PATH;
+#else
+            // myphotoapp:albumname?name="albumname"
+            // myphotoapp:albumname?index=1
+            string redirectUrl = appIdentifier + ":" + EMAIL_SIGN_IN_PATH;
+#endif
+            return redirectUrl;
+        }
+        public static string GetSanitizedApplicationIdentifier()
+        {
+            return Application.identifier.
+                ToLower().
+                Replace(".", string.Empty).
+                Replace("-", string.Empty).
+                Replace("_", string.Empty);
         }
     }
 }

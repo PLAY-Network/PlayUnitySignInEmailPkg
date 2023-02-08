@@ -4,6 +4,7 @@ using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEditor.Build;
+using RGN.Modules.SignIn;
 
 namespace RGN.MyEditor {
     public class MacOSAddSchemes : MonoBehaviour, IActiveBuildTargetChanged
@@ -21,15 +22,17 @@ namespace RGN.MyEditor {
 
         private void AddSchemes()
         {
-            string packageNameScheme = PlayerSettings.applicationIdentifier.ToLower().Replace(".", string.Empty);
+            string packageNameScheme = RGNHttpUtility.GetSanitizedApplicationIdentifier();
+            string path = RGNHttpUtility.EMAIL_SIGN_IN_PATH;
+            string urlScheme = packageNameScheme + ":" + path;
 
-            if (!PlayerSettings.macOS.urlSchemes.Contains(packageNameScheme))
+            if (!PlayerSettings.macOS.urlSchemes.Contains(urlScheme))
             {
                 List<string> schemes = new List<string>();
                 schemes = PlayerSettings.macOS.urlSchemes.ToList();
-                schemes.Add(packageNameScheme);
+                schemes.Add(urlScheme);
                 PlayerSettings.macOS.urlSchemes = schemes.ToArray();
-                Debug.Log("New URL schemes added : " + packageNameScheme);
+                Debug.Log("New URL schemes added : " + urlScheme);
             }
         }
     }
