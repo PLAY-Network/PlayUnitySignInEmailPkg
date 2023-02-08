@@ -28,26 +28,21 @@ namespace RGN.Modules.SignIn
             }
             return ret;
         }
-        public static string GetDeepLinkRedirectUrlForEmailSignIn()
+
+        //public static string GetSanitizedRGNProjecId()
+        //{
+        //    ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
+        //    string projectId = applicationStore.RGNProjectId;
+        //    return projectId.
+        //        ToLower().
+        //        Replace(".", string.Empty).
+        //        Replace("-", string.Empty).
+        //        Replace("_", string.Empty);
+        //}
+
+        public static string GetDeepLinkRedirectScheme()
         {
-            string appIdentifier = GetSanitizedApplicationIdentifier();
-#if UNITY_ANDROID
-            // <scheme>://<host>:<port>/<path>
-            string redirectUrl = appIdentifier + "://localhost/" + EMAIL_SIGN_IN_PATH;
-#else
-            // myphotoapp:albumname?name="albumname"
-            // myphotoapp:albumname?index=1
-            string redirectUrl = appIdentifier + ":" + EMAIL_SIGN_IN_PATH;
-#endif
-            return redirectUrl;
-        }
-        public static string GetSanitizedApplicationIdentifier()
-        {
-            return Application.identifier.
-                ToLower().
-                Replace(".", string.Empty).
-                Replace("-", string.Empty).
-                Replace("_", string.Empty);
+            return (Application.companyName + Application.productName).ToLower().Replace(".", string.Empty);
         }
     }
 }

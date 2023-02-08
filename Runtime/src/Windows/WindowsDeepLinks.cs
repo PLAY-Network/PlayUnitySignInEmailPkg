@@ -36,7 +36,7 @@ namespace RGN.Modules.SignIn
                     return;
                 }
             }
-            catch (Exception exception) when (exception is SecurityException or UnauthorizedAccessException)
+            catch (Exception exception)
             {
                 using (Process appRunasProcess = new Process())
                 {
@@ -120,7 +120,7 @@ namespace RGN.Modules.SignIn
         private static void RegisterCustomURL()
         {
 #if UNITY_STANDALONE_WIN
-            string packageNameScheme = Application.identifier.ToLower().Replace(".", string.Empty);
+            string packageNameScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
 
             RegistryKey customUrlSubKey = Registry.ClassesRoot.CreateSubKey(packageNameScheme);
             customUrlSubKey.SetValue("", "");

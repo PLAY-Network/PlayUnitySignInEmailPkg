@@ -3,36 +3,24 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
-using UnityEditor.Build;
 using RGN.Modules.SignIn;
 
-namespace RGN.MyEditor {
-    public class MacOSAddSchemes : MonoBehaviour, IActiveBuildTargetChanged
+namespace RGN.MyEditor
+{
+    public class MacOSAddSchemes
     {
-        public int callbackOrder { get { return 0; } }
-        public void OnActiveBuildTargetChanged(BuildTarget previousTarget, BuildTarget newTarget)
+        [InitializeOnLoadMethod]
+        private static void AddSchemes()
         {
-            AddSchemes();
-        }
+            string packageNameScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
 
-        private void OnValidate()
-        {
-            AddSchemes();
-        }
-
-        private void AddSchemes()
-        {
-            string packageNameScheme = RGNHttpUtility.GetSanitizedApplicationIdentifier();
-            string path = RGNHttpUtility.EMAIL_SIGN_IN_PATH;
-            string urlScheme = packageNameScheme + ":" + path;
-
-            if (!PlayerSettings.macOS.urlSchemes.Contains(urlScheme))
+            if (!PlayerSettings.macOS.urlSchemes.Contains(packageNameScheme))
             {
                 List<string> schemes = new List<string>();
                 schemes = PlayerSettings.macOS.urlSchemes.ToList();
-                schemes.Add(urlScheme);
+                schemes.Add(packageNameScheme);
                 PlayerSettings.macOS.urlSchemes = schemes.ToArray();
-                Debug.Log("New URL schemes added : " + urlScheme);
+                Debug.Log("New URL schemes added : " + packageNameScheme);
             }
         }
     }

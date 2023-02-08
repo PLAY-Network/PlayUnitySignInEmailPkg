@@ -29,7 +29,9 @@
     "/Editor",
     "/Editor.meta",
     "/link.xml",
-    "/link.xml.meta"
+    "/link.xml.meta",
+    "/Plugins",
+    "/Plugins.meta"
   ],
   "dependencies": {
     "io.getready.rgn.core": "0.1.0"

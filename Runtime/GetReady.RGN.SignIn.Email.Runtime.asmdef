@@ -1,3 +1,16 @@
 {
-	"name": "GetReady.RGN.SignIn.Email.Runtime"
+    "name": "GetReady.RGN.SignIn.Email.Runtime",
+    "rootNamespace": "",
+    "references": [
+        "GUID:cf87a66721c783241b810ce809921a27"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

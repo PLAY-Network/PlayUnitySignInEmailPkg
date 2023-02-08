@@ -1,5 +1,4 @@
-﻿#if UNITY_EDITOR
-using System.IO;
+﻿using System.IO;
 using System.Xml;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -27,9 +26,8 @@ namespace RGN.MyEditor
                 writer.Flush();
             }
 
-            AssetDatabase.CopyAsset("Assets/Plugins/Windows/RGNDeepLinkReflector.exe",
+            AssetDatabase.CopyAsset("Packages/io.getready.rgn.signin.email/Plugins/Windows/RGNDeepLinkReflector.exe",
                 Path.Combine(Path.GetDirectoryName(pathToBuiltProject)!, "RGNDeepLinkReflector.exe"));
         }
     }
 }
-#endif

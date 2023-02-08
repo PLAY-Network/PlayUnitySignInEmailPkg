@@ -23,7 +23,7 @@ namespace RGN.Modules.SignIn
             WindowsDeepLinks.DeepLinkActivated += OnDeepLinkActivated;
             rGNCore.UpdateEvent += () => WindowsDeepLinks.Tick();
 #endif
-            string redirectUrl = RGNHttpUtility.GetDeepLinkRedirectUrlForEmailSignIn();
+            string redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
             _finalSignInUrl = SIGN_IN_URL + redirectUrl;
             Application.deepLinkActivated += OnDeepLinkActivated;
 
