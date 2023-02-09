@@ -1,8 +1,6 @@
 using System.IO;
 using RGN.Modules.SignIn;
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 namespace RGN.MyEditor
@@ -20,7 +18,7 @@ namespace RGN.MyEditor
                 GenerateManifest();
             }
 
-            string packageNameScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
+            string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
 
             string manifestContent = File.ReadAllText(manifestPath);
 
@@ -28,10 +26,10 @@ namespace RGN.MyEditor
                 "<action android:name=\"android.intent.action.VIEW\" />\n" +
                 "<category android:name=\"android.intent.category.DEFAULT\" />\n" +
                 "<category android:name=\"android.intent.category.BROWSABLE\" />\n" +
-                "<data android:scheme=\"" + packageNameScheme + "\" android:host=\"\" />\n" +
+                "<data android:scheme=\"" + deepLinkRedirectScheme + "\" android:host=\"\" />\n" +
                 "</intent-filter>\n";
 
-            if (!manifestContent.Contains(packageNameScheme))
+            if (!manifestContent.Contains(deepLinkRedirectScheme))
             {
                 // Add the new intent
                 int insertIndex = manifestContent.IndexOf("</activity>");

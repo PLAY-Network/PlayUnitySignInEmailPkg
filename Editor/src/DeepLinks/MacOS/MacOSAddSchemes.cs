@@ -12,15 +12,15 @@ namespace RGN.MyEditor
         [InitializeOnLoadMethod]
         private static void AddSchemes()
         {
-            string packageNameScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
+            string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
 
-            if (!PlayerSettings.macOS.urlSchemes.Contains(packageNameScheme))
+            if (!PlayerSettings.macOS.urlSchemes.Contains(deepLinkRedirectScheme))
             {
                 List<string> schemes = new List<string>();
-                schemes = PlayerSettings.macOS.urlSchemes.ToList();
-                schemes.Add(packageNameScheme);
+                //schemes = PlayerSettings.macOS.urlSchemes.ToList();
+                schemes.Add(deepLinkRedirectScheme);
                 PlayerSettings.macOS.urlSchemes = schemes.ToArray();
-                Debug.Log("New URL schemes added : " + packageNameScheme);
+                Debug.Log("New URL schemes added : " + deepLinkRedirectScheme);
             }
         }
     }

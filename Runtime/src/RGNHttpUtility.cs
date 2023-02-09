@@ -29,20 +29,15 @@ namespace RGN.Modules.SignIn
             return ret;
         }
 
-        //public static string GetSanitizedRGNProjecId()
-        //{
-        //    ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
-        //    string projectId = applicationStore.RGNProjectId;
-        //    return projectId.
-        //        ToLower().
-        //        Replace(".", string.Empty).
-        //        Replace("-", string.Empty).
-        //        Replace("_", string.Empty);
-        //}
-
         public static string GetDeepLinkRedirectScheme()
         {
-            return (Application.companyName + Application.productName).ToLower().Replace(".", string.Empty);
+            ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
+            string projectId = "rgn" + applicationStore.RGNProjectId;
+            return projectId.
+                ToLower().
+                Replace(".", string.Empty).
+                Replace("-", string.Empty).
+                Replace("_", string.Empty);
         }
     }
 }

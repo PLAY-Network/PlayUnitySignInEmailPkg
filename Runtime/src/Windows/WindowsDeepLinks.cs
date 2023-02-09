@@ -120,9 +120,9 @@ namespace RGN.Modules.SignIn
         private static void RegisterCustomURL()
         {
 #if UNITY_STANDALONE_WIN
-            string packageNameScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
+            string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
 
-            RegistryKey customUrlSubKey = Registry.ClassesRoot.CreateSubKey(packageNameScheme);
+            RegistryKey customUrlSubKey = Registry.ClassesRoot.CreateSubKey(deepLinkRedirectScheme);
             customUrlSubKey.SetValue("", "");
             customUrlSubKey.SetValue("URL Protocol", "");
 
@@ -137,7 +137,7 @@ namespace RGN.Modules.SignIn
 
             customUrlSubKey.Close();
 
-            PlayerPrefs.SetInt("IsCustomUrlRegistered", 1);
+            PlayerPrefs.SetInt(deepLinkRedirectScheme, 1);
 #endif
         }
 
@@ -159,7 +159,8 @@ namespace RGN.Modules.SignIn
 
         private static bool IsCustomUrlRegistered()
         {
-            return PlayerPrefs.GetInt("IsCustomUrlRegistered", 0) == 1;
+            string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
+            return PlayerPrefs.GetInt(deepLinkRedirectScheme, 0) == 1;
         }
     }
 }
