@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Security;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -19,6 +20,9 @@ namespace RGN.Modules.SignIn
         private static Queue<string> _events;
         private static Mutex _mutex;
         private static Thread _thread;
+        
+        private static readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+        private static readonly CancellationToken CancellationToken = CancellationTokenSource.Token;
 
         public delegate void DeepLinkActivatedDelegate(string url);
         public static DeepLinkActivatedDelegate DeepLinkActivated;
@@ -55,13 +59,9 @@ namespace RGN.Modules.SignIn
             }
 
             _mutex = new Mutex(false, Application.productName);
-
             try
             {
-                if (!_mutex.WaitOne(0))
-                {
-                    Debug.LogError("Mutex already opened");
-                }
+                _mutex.WaitOne();
             }
             catch (Exception exception)
             {
@@ -95,25 +95,41 @@ namespace RGN.Modules.SignIn
         public static void Dispose()
         {
 #if UNITY_STANDALONE_WIN
-        _mutex?.Close();
-        _thread?.Abort();
+            CancellationTokenSource.Cancel();
+            _mutex?.Close();
+            _thread?.Abort();
 #endif
         }
 
         private static void ListenPipe()
         {
-            while (true)
+#pragma warning disable CS4014
+            Task.Run(ClosePipeHack);
+#pragma warning restore CS4014
+        
+            while (!CancellationToken.IsCancellationRequested)
             {
-                using (var pipeServer = new NamedPipeServerStream(Application.productName, PipeDirection.In, 1))
-                {
-                    pipeServer.WaitForConnection();
+                var pipeServer = new NamedPipeServerStream(Application.productName, PipeDirection.In, 1);
+                pipeServer.WaitForConnection();
+            
+                using var sr = new StreamReader(pipeServer);
+                string message = sr.ReadLine();
+                _events.Enqueue(message);
+            
+                pipeServer.Dispose();
+            }
+        }
+        
+        private static async Task ClosePipeHack()
+        {
+            while (!CancellationToken.IsCancellationRequested)
+            {
+                Thread.Yield();
+            }
 
-                    using (var sr = new StreamReader(pipeServer))
-                    {
-                        string message = sr.ReadLine();
-                        _events.Enqueue(message);
-                    }
-                }
+            using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", Application.productName, PipeDirection.Out))
+            {
+                await pipeClient.ConnectAsync(100);
             }
         }
 
@@ -153,7 +169,7 @@ namespace RGN.Modules.SignIn
         {
             string dataPath = Application.dataPath;
             string appPath = Path.Combine(dataPath, "../");
-            string appExecutablePath = Path.GetFullPath(Path.Combine(appPath, "RGNDeepLinkReflector.exe"));
+            string appExecutablePath = Path.GetFullPath(Path.Combine(appPath, $"{Application.productName}DL.exe"));
             return appExecutablePath;
         }
 

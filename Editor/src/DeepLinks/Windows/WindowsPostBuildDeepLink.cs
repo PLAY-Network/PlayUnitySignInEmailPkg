@@ -27,7 +27,7 @@ namespace RGN.MyEditor
             }
 
             AssetDatabase.CopyAsset("Packages/io.getready.rgn.signin.email/Plugins/Windows/RGNDeepLinkReflector.exe",
-                Path.Combine(Path.GetDirectoryName(pathToBuiltProject)!, "RGNDeepLinkReflector.exe"));
+                Path.Combine(Path.GetDirectoryName(pathToBuiltProject)!, $"{Application.productName}DL.exe"));
         }
     }
 }
