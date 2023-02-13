@@ -24,7 +24,7 @@ namespace RGN.Modules.SignIn
             rGNCore.UpdateEvent += WindowsDeepLinks.Tick;
 #endif
             string redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
-            _finalSignInUrl = SIGN_IN_URL + redirectUrl;
+            _finalSignInUrl = SIGN_IN_URL + redirectUrl + "&customToken=true";
             Application.deepLinkActivated += OnDeepLinkActivated;
 
             if (!string.IsNullOrEmpty(Application.absoluteURL))
