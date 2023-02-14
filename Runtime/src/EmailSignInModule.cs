@@ -35,7 +35,7 @@ namespace RGN.Modules.SignIn
         }
         private async void OnTokenReceived(string token)
         {
-            rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: Token received: " + token);
+            rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
             if (string.IsNullOrEmpty(token))
             {
                 rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
