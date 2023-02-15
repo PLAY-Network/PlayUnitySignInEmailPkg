@@ -9,6 +9,14 @@ namespace RGN.Modules.SignIn
         private IRGNRolesCore rgnCore;
         private RGNDeepLink _rgnDeepLink;
 
+        public static void InitializeWindowsDeepLink()
+        {
+#if UNITY_STANDALONE_WIN
+            if (WindowsDeepLinks.IsCustomUrlRegistered()) { return; }
+            WindowsDeepLinks.StartHandling();
+#endif
+        }
+
         public void SetRGNCore(IRGNRolesCore rgnCore)
         {
             this.rgnCore = rgnCore;

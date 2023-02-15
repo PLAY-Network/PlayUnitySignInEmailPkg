@@ -173,7 +173,7 @@ namespace RGN.Modules.SignIn
             return appExecutablePath;
         }
 
-        private static bool IsCustomUrlRegistered()
+        public static bool IsCustomUrlRegistered()
         {
             string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
             return PlayerPrefs.GetInt(deepLinkRedirectScheme, 0) == 1;

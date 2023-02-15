@@ -34,6 +34,7 @@
     "/Plugins.meta"
   ],
   "dependencies": {
-    "io.getready.rgn.core": "0.1.0"
+    "io.getready.rgn.core": "0.1.0",
+    "io.getready.rgn.impl.firebase": "0.1.0"
   }
 }
