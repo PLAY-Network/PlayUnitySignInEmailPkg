@@ -11,7 +11,7 @@ namespace RGN.Modules.SignIn
 
         public static void InitializeWindowsDeepLink()
         {
-#if UNITY_STANDALONE_WIN
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             if (WindowsDeepLinks.IsCustomUrlRegistered()) { return; }
             WindowsDeepLinks.StartHandling();
 #endif

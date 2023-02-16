@@ -18,7 +18,7 @@ namespace RGN.Modules.SignIn
             {
                 return;
             }
-#if UNITY_STANDALONE_WIN
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             WindowsDeepLinks.StartHandling();
             WindowsDeepLinks.DeepLinkActivated += OnDeepLinkActivated;
             rGNCore.UpdateEvent += WindowsDeepLinks.Tick;
@@ -38,7 +38,7 @@ namespace RGN.Modules.SignIn
 
         private void OnApplicationQuit()
         {
-#if UNITY_STANDALONE_WIN
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             WindowsDeepLinks.Dispose();
             WindowsDeepLinks.DeepLinkActivated -= OnDeepLinkActivated;
 #endif
@@ -47,7 +47,7 @@ namespace RGN.Modules.SignIn
         public void Dispose()
         {
             Application.deepLinkActivated -= OnDeepLinkActivated;
-#if UNITY_STANDALONE_WIN
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             WindowsDeepLinks.DeepLinkActivated -= OnDeepLinkActivated;
             WindowsDeepLinks.Dispose();
 #endif

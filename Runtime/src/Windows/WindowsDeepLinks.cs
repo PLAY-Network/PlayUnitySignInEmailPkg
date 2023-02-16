@@ -9,10 +9,6 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-#if UNITY_STANDALONE_WIN
-using Microsoft.Win32;
-#endif
-
 namespace RGN.Modules.SignIn
 {
     internal sealed class WindowsDeepLinks
@@ -29,27 +25,16 @@ namespace RGN.Modules.SignIn
 
         public static void StartHandling()
         {
-#if UNITY_STANDALONE_WIN
-            try
-            {
-                if (!IsCustomUrlRegistered())
-                {
-                    RegisterCustomURL();
-                    WindowsDeepLinkUtility.RunAsDesktopUser(GetAppExecutablePath());
-                    Application.Quit();
-                    return;
-                }
-            }
-            catch (Exception exception)
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+            if (!IsCustomUrlRegistered())
             {
                 using (Process appRunasProcess = new Process())
                 {
-                    appRunasProcess.StartInfo.FileName = GetAppExecutablePath();
+                    appRunasProcess.StartInfo.FileName = GetAppReflectorExecutablePath();
                     appRunasProcess.StartInfo.Verb = "runas";
                     appRunasProcess.Start();
                 }
-                Application.Quit();
-                return;
+                SetIsCustomUrlRegistered(true);
             }
 
             _events = new Queue<string>();
@@ -57,7 +42,7 @@ namespace RGN.Modules.SignIn
             {
                 _events.Enqueue(Environment.CommandLine);
             }
-
+            
             _mutex = new Mutex(false, Application.productName);
             try
             {
@@ -67,7 +52,7 @@ namespace RGN.Modules.SignIn
             {
                 Debug.LogError($"Error while to try open mutex: {exception}");
             }
-
+            
             _thread = new Thread(ListenPipe);
             _thread.Start();
 #endif
@@ -75,7 +60,7 @@ namespace RGN.Modules.SignIn
 
         public static void Tick()
         {
-#if UNITY_STANDALONE_WIN
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
         if (_events.Count > 0)
         {
             string message = _events.Dequeue();
@@ -94,7 +79,7 @@ namespace RGN.Modules.SignIn
 
         public static void Dispose()
         {
-#if UNITY_STANDALONE_WIN
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
             CancellationTokenSource.Cancel();
             _mutex?.Close();
             _thread?.Abort();
@@ -133,30 +118,6 @@ namespace RGN.Modules.SignIn
             }
         }
 
-        private static void RegisterCustomURL()
-        {
-#if UNITY_STANDALONE_WIN
-            string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
-
-            RegistryKey customUrlSubKey = Registry.ClassesRoot.CreateSubKey(deepLinkRedirectScheme);
-            customUrlSubKey.SetValue("", "");
-            customUrlSubKey.SetValue("URL Protocol", "");
-
-            RegistryKey shellSubKey = customUrlSubKey.CreateSubKey("shell");
-            shellSubKey.SetValue("", "open");
-
-            RegistryKey openSubKey = shellSubKey.CreateSubKey("open");
-            customUrlSubKey.SetValue("", "");
-
-            RegistryKey commandSubKey = openSubKey.CreateSubKey("command");
-            commandSubKey.SetValue("", $"{GetAppReflectorExecutablePath()} \"%1\"");
-
-            customUrlSubKey.Close();
-
-            PlayerPrefs.SetInt(deepLinkRedirectScheme, 1);
-#endif
-        }
-
         private static string GetAppExecutablePath()
         {
             string dataPath = Application.dataPath;
@@ -177,6 +138,13 @@ namespace RGN.Modules.SignIn
         {
             string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
             return PlayerPrefs.GetInt(deepLinkRedirectScheme, 0) == 1;
+        }
+        
+        private static void SetIsCustomUrlRegistered(bool value)
+        {
+            string deepLinkRedirectScheme = RGNHttpUtility.GetDeepLinkRedirectScheme();
+            PlayerPrefs.SetInt(deepLinkRedirectScheme, value ? 1 : 0);
+            PlayerPrefs.Save();
         }
     }
 }
