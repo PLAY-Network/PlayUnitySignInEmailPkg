@@ -5,10 +5,9 @@ namespace RGN.Modules.SignIn
 {
     internal sealed class RGNDeepLink : System.IDisposable
     {
-        private const string SIGN_IN_URL = "https://rgn-auth.web.app/?url_redirect=";
-
         internal event Action<string> TokenReceived;
 
+        private string _baseSignInUrl;
         private string _finalSignInUrl;
         private bool _initialized;
 
@@ -24,7 +23,8 @@ namespace RGN.Modules.SignIn
             rGNCore.UpdateEvent += WindowsDeepLinks.Tick;
 #endif
             string redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
-            _finalSignInUrl = SIGN_IN_URL + redirectUrl + "&customToken=true";
+            _baseSignInUrl = GetEmailSignInURL();
+            _finalSignInUrl = _baseSignInUrl + redirectUrl + "&customToken=true";
             Application.deepLinkActivated += OnDeepLinkActivated;
 
             if (!string.IsNullOrEmpty(Application.absoluteURL))
@@ -68,6 +68,15 @@ namespace RGN.Modules.SignIn
             string token = parsedParameters["token"];
 
             TokenReceived?.Invoke(token);
+        }
+
+        private string GetEmailSignInURL()
+        {
+            ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
+            string baseURL = applicationStore.isProduction ?
+                applicationStore.GetRGNProductionEmailSignInURL :
+                applicationStore.GetRGNStatingEmailSignInURL;
+            return baseURL;
         }
     }
 }
