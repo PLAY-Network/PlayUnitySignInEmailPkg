@@ -6,7 +6,7 @@ namespace RGN.Modules.SignIn
 {
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
-        private IRGNRolesCore rgnCore;
+        private IRGNRolesCore _rgnCore;
         private RGNDeepLink _rgnDeepLink;
 
         public static void InitializeWindowsDeepLink()
@@ -19,12 +19,12 @@ namespace RGN.Modules.SignIn
 
         public void SetRGNCore(IRGNRolesCore rgnCore)
         {
-            this.rgnCore = rgnCore;
+            _rgnCore = rgnCore;
         }
         public void Init()
         {
             _rgnDeepLink = new RGNDeepLink();
-            _rgnDeepLink.Init(rgnCore);
+            _rgnDeepLink.Init(_rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceived;
         }
         public void Dispose()
@@ -39,19 +39,24 @@ namespace RGN.Modules.SignIn
 
         public void TryToSignIn()
         {
+            if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
+            {
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
+                return;
+            }
             _rgnDeepLink.OpenURL();
         }
         private async void OnTokenReceived(string token)
         {
-            rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
+            _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
             if (string.IsNullOrEmpty(token))
             {
-                rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+                _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
             }
             else
             {
-                await rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
-                rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
+                await _rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
+                _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
             }
         }
 
@@ -68,50 +73,50 @@ namespace RGN.Modules.SignIn
         }
         public void SendPasswordResetEmail(string email)
         {
-            rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
+            _rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
                 if (task.IsCanceled)
                 {
-                    rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync was canceled.");
+                    _rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync was canceled.");
                     return;
                 }
 
                 if (task.IsFaulted)
                 {
-                    Utility.ExceptionHelper.PrintToLog(rgnCore.Dependencies.Logger, task.Exception);
-                    rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync encountered an error: " +
+                    Utility.ExceptionHelper.PrintToLog(_rgnCore.Dependencies.Logger, task.Exception);
+                    _rgnCore.Dependencies.Logger.LogError("[EmailSignInModule]: SendPasswordResetEmailAsync encountered an error: " +
                                    task.Exception);
                     return;
                 }
 
                 SignOut();
-                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Password reset email sent successfully.");
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Password reset email sent successfully.");
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
         public void SignOut()
         {
-            rgnCore.SignOutRGN();
+            _rgnCore.SignOutRGN();
         }
 
         private void TryToLink(string email, string password)
         {
-            rgnCore.Dependencies.Logger.Log("EmailSignInModule]: TryToSignIn(" + email + ", " + string.IsNullOrEmpty(password) + ")");
-            var credential = rgnCore.ReadyMasterAuth.emailAuthProvider.GetCredential(email, password);
+            _rgnCore.Dependencies.Logger.Log("EmailSignInModule]: TryToSignIn(" + email + ", " + string.IsNullOrEmpty(password) + ")");
+            var credential = _rgnCore.ReadyMasterAuth.emailAuthProvider.GetCredential(email, password);
 
-            rgnCore.ReadyMasterAuth.CurrentUser.LinkAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task => {
+            _rgnCore.ReadyMasterAuth.CurrentUser.LinkAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task => {
                 if (task.IsCanceled)
                 {
-                    rgnCore.Dependencies.Logger.LogWarning("EmailSignInModule]: LinkAndRetrieveDataWithCredentialAsync was cancelled");
+                    _rgnCore.Dependencies.Logger.LogWarning("EmailSignInModule]: LinkAndRetrieveDataWithCredentialAsync was cancelled");
                     return;
                 }
 
                 if (task.IsFaulted)
                 {
-                    Utility.ExceptionHelper.PrintToLog(rgnCore.Dependencies.Logger, task.Exception);
+                    Utility.ExceptionHelper.PrintToLog(_rgnCore.Dependencies.Logger, task.Exception);
                     FirebaseAccountLinkException firebaseAccountLinkException = task.Exception.InnerException as FirebaseAccountLinkException;
                     if (firebaseAccountLinkException != null && firebaseAccountLinkException.ErrorCode == (int)AuthError.CredentialAlreadyInUse)
                     {
-                        rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
+                        _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
                         return;
                     }
 
@@ -126,39 +131,39 @@ namespace RGN.Modules.SignIn
                             _ => EnumLoginError.Unknown
                         };
 
-                        rgnCore.SetAuthCompletion(EnumLoginState.Error, loginError);
+                        _rgnCore.SetAuthCompletion(EnumLoginState.Error, loginError);
                         return;
                     }
 
-                    rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+                    _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
                     return;
                 }
 
-                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: LinkWith Email/Password Successful. " + rgnCore.ReadyMasterAuth.CurrentUser.UserId + " ");
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: LinkWith Email/Password Successful. " + _rgnCore.ReadyMasterAuth.CurrentUser.UserId + " ");
 
-                rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
+                _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
         private void TryToSingInWithoutLink(string email, string password)
         {
-            rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task => {
+            _rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task => {
                 if (task.IsCanceled)
                 {
-                    rgnCore.Dependencies.Logger.LogWarning("EmailSignInModule]: SignInWithEmailAndPasswordAsync was cancelled");
+                    _rgnCore.Dependencies.Logger.LogWarning("EmailSignInModule]: SignInWithEmailAndPasswordAsync was cancelled");
                     SignOut();
                     return;
                 }
 
                 if (task.IsFaulted)
                 {
-                    Utility.ExceptionHelper.PrintToLog(rgnCore.Dependencies.Logger, task.Exception);
+                    Utility.ExceptionHelper.PrintToLog(_rgnCore.Dependencies.Logger, task.Exception);
                     SignOut();
-                    rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+                    _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
                     return;
                 }
 
-                rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, signed in");
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, signed in");
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
