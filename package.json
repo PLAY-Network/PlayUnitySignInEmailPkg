@@ -33,7 +33,8 @@
     "/Plugins",
     "/Plugins.meta",
     "/Samples",
-    "/Samples.meta"
+    "/Samples.meta",
+    "/Samples~"
   ],
   "samples": [
     {
