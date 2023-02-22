@@ -33,6 +33,13 @@
     "/Plugins",
     "/Plugins.meta"
   ],
+  "samples": [
+    {
+      "displayName": "Sign In/Up Example Scene and Prefab",
+      "description": "Contains ready to use sign in/up prefab with working auth implementation.",
+      "path": "Samples~/SignInUpExample"
+    }
+  ],
   "dependencies": {
     "io.getready.rgn.core": "0.1.0",
     "io.getready.rgn.impl.firebase": "0.1.0"
