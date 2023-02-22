@@ -31,7 +31,9 @@
     "/link.xml",
     "/link.xml.meta",
     "/Plugins",
-    "/Plugins.meta"
+    "/Plugins.meta",
+    "/Samples",
+    "/Samples.meta"
   ],
   "samples": [
     {
