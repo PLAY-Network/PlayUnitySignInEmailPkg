@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using RGN.Impl.Firebase;
 using RGN.Modules.SignIn;
+using RGN.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +14,7 @@ namespace RGN.Samples
         [SerializeField] private Button _tryToSignInButton;
         [SerializeField] private Button _signOutButton;
         [SerializeField] private CanvasGroup _canvasGroup;
+        [SerializeField] private LoadingIndicator _loadingIndicator;
 
         [SerializeField] private TextMeshProUGUI _userInfoText;
 
@@ -41,6 +43,7 @@ namespace RGN.Samples
         private void OnTryToSignInButtonClick()
         {
             _canvasGroup.interactable = false;
+            _loadingIndicator.SetEnabled(true);
             EmailSignInModule.I.TryToSignIn();
         }
         private void OnSignOutButtonClick()
@@ -49,7 +52,6 @@ namespace RGN.Samples
         }
         private void OnAuthStateChanged(EnumLoginState state, EnumLoginError error)
         {
-            _canvasGroup.interactable = true;
             UpdateUserInfoText();
         }
         private void UpdateUserInfoText()
@@ -65,6 +67,9 @@ namespace RGN.Samples
             sb.Append("Id: ").AppendLine(user.UserId);
             sb.Append("AuthorizedProviders: ").AppendLine(RGNCore.I.AuthorizedProviders.ToString());
             _userInfoText.text = sb.ToString();
+
+            _canvasGroup.interactable = true;
+            _loadingIndicator.SetEnabled(false);
         }
     }
 }
