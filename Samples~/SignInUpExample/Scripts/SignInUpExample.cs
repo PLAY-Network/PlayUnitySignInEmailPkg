@@ -20,6 +20,8 @@ namespace RGN.Samples
 
         public override Task InitAsync()
         {
+            _canvasGroup.interactable = false;
+            _loadingIndicator.SetEnabled(true);
             _backButton.gameObject.SetActive(false);
             _backButton.onClick.AddListener(OnBackButtonClick);
             _tryToSignInButton.onClick.AddListener(OnTryToSignInButtonClick);
@@ -52,6 +54,18 @@ namespace RGN.Samples
         }
         private void OnAuthStateChanged(EnumLoginState state, EnumLoginError error)
         {
+            switch (state)
+            {
+                case EnumLoginState.NotLoggedIn:
+                    ToastMessage.I.Show("User Is Not Logged In");
+                    break;
+                case EnumLoginState.Success:
+                    ToastMessage.I.ShowSuccess("User Successfully Logged In");
+                    break;
+                case EnumLoginState.Error:
+                    ToastMessage.I.ShowError("User Login Error: " + error);
+                    break;
+            };
             UpdateUserInfoText();
         }
         private void UpdateUserInfoText()
