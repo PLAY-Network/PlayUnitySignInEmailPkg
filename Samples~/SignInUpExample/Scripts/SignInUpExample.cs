@@ -1,4 +1,5 @@
-using System;
+using System.Threading.Tasks;
+using RGN.Impl.Firebase;
 using RGN.Modules.SignIn;
 using TMPro;
 using UnityEngine;
@@ -6,7 +7,7 @@ using UnityEngine.UI;
 
 namespace RGN.Samples
 {
-    internal sealed class SignInUpExample : MonoBehaviour
+    internal sealed class SignInUpExample : IInitializable
     {
         [SerializeField] private Button _backButton;
         [SerializeField] private Button _tryToSignInButton;
@@ -15,26 +16,24 @@ namespace RGN.Samples
 
         [SerializeField] private TextMeshProUGUI _userInfoText;
 
-        private async void Awake()
+        public override Task InitAsync()
         {
-            RGNCoreBuilder.CreateInstance(new Impl.Firebase.Dependencies());
-            await RGNCoreBuilder.BuildAsync();
-        }
-
-        private void OnEnable()
-        {
+            _backButton.gameObject.SetActive(false);
             _backButton.onClick.AddListener(OnBackButtonClick);
             _tryToSignInButton.onClick.AddListener(OnTryToSignInButtonClick);
             _signOutButton.onClick.AddListener(OnSignOutButtonClick);
+            UpdateUserInfoText();
             RGNCore.I.AuthenticationChanged += OnAuthStateChanged;
+            return Task.CompletedTask;
         }
-        private void OnDisable()
+        protected override void Dispose(bool disposing)
         {
             _backButton.onClick.RemoveListener(OnBackButtonClick);
             _tryToSignInButton.onClick.RemoveListener(OnTryToSignInButtonClick);
             _signOutButton.onClick.RemoveListener(OnSignOutButtonClick);
             RGNCore.I.AuthenticationChanged -= OnAuthStateChanged;
         }
+
         private void OnBackButtonClick()
         {
             Debug.Log("OnBackButtonClick");
