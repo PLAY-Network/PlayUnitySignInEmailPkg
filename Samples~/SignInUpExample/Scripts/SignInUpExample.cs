@@ -10,7 +10,6 @@ namespace RGN.Samples
 {
     public sealed class SignInUpExample : IUIScreen
     {
-        [SerializeField] private Button _backButton;
         [SerializeField] private Button _tryToSignInButton;
         [SerializeField] private Button _signOutButton;
         [SerializeField] private CanvasGroup _canvasGroup;
@@ -23,8 +22,6 @@ namespace RGN.Samples
             base.InitAsync(rgnFrame);
             _canvasGroup.interactable = false;
             _loadingIndicator.SetEnabled(true);
-            _backButton.gameObject.SetActive(false);
-            _backButton.onClick.AddListener(OnBackButtonClick);
             _tryToSignInButton.onClick.AddListener(OnTryToSignInButtonClick);
             _signOutButton.onClick.AddListener(OnSignOutButtonClick);
             UpdateUserInfoText();
@@ -33,15 +30,10 @@ namespace RGN.Samples
         }
         protected override void Dispose(bool disposing)
         {
-            _backButton.onClick.RemoveListener(OnBackButtonClick);
+            base.Dispose(disposing);
             _tryToSignInButton.onClick.RemoveListener(OnTryToSignInButtonClick);
             _signOutButton.onClick.RemoveListener(OnSignOutButtonClick);
             RGNCore.I.AuthenticationChanged -= OnAuthStateChanged;
-        }
-        public override void SetVisible(bool visible)
-        {
-            base.SetVisible(visible);
-            _backButton.gameObject.SetActive(true);
         }
 
         private void OnTryToSignInButtonClick()
