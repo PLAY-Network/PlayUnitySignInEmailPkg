@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace RGN.Samples
 {
-    internal sealed class SignInUpExample : IInitializable
+    public sealed class SignInUpExample : IUIScreen
     {
         [SerializeField] private Button _backButton;
         [SerializeField] private Button _tryToSignInButton;
@@ -18,8 +18,9 @@ namespace RGN.Samples
 
         [SerializeField] private TextMeshProUGUI _userInfoText;
 
-        public override Task InitAsync()
+        public override Task InitAsync(IRGNFrame rgnFrame)
         {
+            base.InitAsync(rgnFrame);
             _canvasGroup.interactable = false;
             _loadingIndicator.SetEnabled(true);
             _backButton.gameObject.SetActive(false);
@@ -37,11 +38,12 @@ namespace RGN.Samples
             _signOutButton.onClick.RemoveListener(OnSignOutButtonClick);
             RGNCore.I.AuthenticationChanged -= OnAuthStateChanged;
         }
-
-        private void OnBackButtonClick()
+        public override void SetVisible(bool visible)
         {
-            Debug.Log("OnBackButtonClick");
+            base.SetVisible(visible);
+            _backButton.gameObject.SetActive(true);
         }
+
         private void OnTryToSignInButtonClick()
         {
             _canvasGroup.interactable = false;
@@ -50,6 +52,8 @@ namespace RGN.Samples
         }
         private void OnSignOutButtonClick()
         {
+            _canvasGroup.interactable = false;
+            _loadingIndicator.SetEnabled(true);
             EmailSignInModule.I.SignOut();
         }
         private void OnAuthStateChanged(EnumLoginState state, EnumLoginError error)
@@ -57,13 +61,24 @@ namespace RGN.Samples
             switch (state)
             {
                 case EnumLoginState.NotLoggedIn:
-                    ToastMessage.I.Show("User Is Not Logged In");
+                    ToastMessage.I.Show("Not Logged In");
                     break;
                 case EnumLoginState.Success:
-                    ToastMessage.I.ShowSuccess("User Successfully Logged In");
+                    string messageSuffix = string.Empty;
+                    if (RGNCore.I.AuthorizedProviders == EnumAuthProvider.Guest)
+                    {
+                        messageSuffix = " As Guest";
+                    }
+                    else if (RGNCore.I.AuthorizedProviders == EnumAuthProvider.Email)
+                    {
+                        messageSuffix = " with " + RGNCore.I.MasterAppUser.Email;
+                    }
+                    ToastMessage.I.ShowSuccess("Successfully Logged In" + messageSuffix);
+                    _canvasGroup.interactable = true;
+                    _loadingIndicator.SetEnabled(false);
                     break;
                 case EnumLoginState.Error:
-                    ToastMessage.I.ShowError("User Login Error: " + error);
+                    ToastMessage.I.ShowError("Login Error: " + error);
                     break;
             };
             UpdateUserInfoText();
@@ -81,9 +96,6 @@ namespace RGN.Samples
             sb.Append("Id: ").AppendLine(user.UserId);
             sb.Append("AuthorizedProviders: ").AppendLine(RGNCore.I.AuthorizedProviders.ToString());
             _userInfoText.text = sb.ToString();
-
-            _canvasGroup.interactable = true;
-            _loadingIndicator.SetEnabled(false);
         }
     }
 }

@@ -25,13 +25,13 @@ namespace RGN.Modules.SignIn
         {
             _rgnDeepLink = new RGNDeepLink();
             _rgnDeepLink.Init(_rgnCore);
-            _rgnDeepLink.TokenReceived += OnTokenReceived;
+            _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
         }
         public void Dispose()
         {
             if (_rgnDeepLink != null)
             {
-                _rgnDeepLink.TokenReceived -= OnTokenReceived;
+                _rgnDeepLink.TokenReceived -= OnTokenReceivedAsync;
                 _rgnDeepLink.Dispose();
                 _rgnDeepLink = null;
             }
@@ -42,11 +42,12 @@ namespace RGN.Modules.SignIn
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
+                _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
                 return;
             }
             _rgnDeepLink.OpenURL();
         }
-        private async void OnTokenReceived(string token)
+        private async void OnTokenReceivedAsync(string token)
         {
             _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
             if (string.IsNullOrEmpty(token))
