@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Specialized;
+using System.Net;
+using System.Net.Sockets;
 
 namespace RGN.Modules.SignIn
 {
@@ -30,6 +32,9 @@ namespace RGN.Modules.SignIn
 
         public static string GetDeepLinkRedirectScheme()
         {
+            #if UNITY_EDITOR
+            return $"http://{IPAddress.Loopback}:{GetRandomUnusedPort()}/";
+#else
             ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
             string projectId = "rgn" + applicationStore.RGNProjectId;
             return projectId.
@@ -37,6 +42,16 @@ namespace RGN.Modules.SignIn
                 Replace(".", string.Empty).
                 Replace("-", string.Empty).
                 Replace("_", string.Empty);
+#endif
+        }
+        
+        private static int GetRandomUnusedPort()
+        {
+            TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            return port;
         }
     }
 }

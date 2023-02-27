@@ -17,16 +17,15 @@ namespace RGN.Samples
 
         [SerializeField] private TextMeshProUGUI _userInfoText;
 
-        public override Task InitAsync(IRGNFrame rgnFrame)
+        public override void PreInit(IRGNFrame rgnFrame)
         {
-            base.InitAsync(rgnFrame);
+            base.PreInit(rgnFrame);
             _canvasGroup.interactable = false;
             _loadingIndicator.SetEnabled(true);
             _tryToSignInButton.onClick.AddListener(OnTryToSignInButtonClick);
             _signOutButton.onClick.AddListener(OnSignOutButtonClick);
             UpdateUserInfoText();
             RGNCore.I.AuthenticationChanged += OnAuthStateChanged;
-            return Task.CompletedTask;
         }
         protected override void Dispose(bool disposing)
         {
