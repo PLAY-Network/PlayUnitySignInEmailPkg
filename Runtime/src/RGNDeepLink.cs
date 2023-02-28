@@ -28,7 +28,12 @@ namespace RGN.Modules.SignIn
             WindowsDeepLinks.DeepLinkActivated += OnDeepLinkActivated;
             rGNCore.UpdateEvent += WindowsDeepLinks.Tick;
 #endif
+            
+            #if UNITY_EDITOR
+            _redirectUrl = RGNHttpUtility.GetEditorRedirectScheme();
+            #else
             _redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
+            #endif
             _baseSignInUrl = GetEmailSignInURL();
             _finalSignInUrl = _baseSignInUrl + _redirectUrl + "&customToken=true";
             Application.deepLinkActivated += OnDeepLinkActivated;

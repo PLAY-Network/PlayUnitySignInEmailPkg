@@ -32,9 +32,6 @@ namespace RGN.Modules.SignIn
 
         public static string GetDeepLinkRedirectScheme()
         {
-            #if UNITY_EDITOR
-            return $"http://{IPAddress.Loopback}:{GetRandomUnusedPort()}/";
-#else
             ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
             string projectId = "rgn" + applicationStore.RGNProjectId;
             return projectId.
@@ -42,7 +39,11 @@ namespace RGN.Modules.SignIn
                 Replace(".", string.Empty).
                 Replace("-", string.Empty).
                 Replace("_", string.Empty);
-#endif
+        }
+        
+        public static string GetEditorRedirectScheme()
+        {
+            return $"http://{IPAddress.Loopback}:{GetRandomUnusedPort()}/";
         }
         
         private static int GetRandomUnusedPort()
