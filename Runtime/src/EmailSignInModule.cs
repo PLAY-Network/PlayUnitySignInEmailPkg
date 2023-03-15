@@ -1,6 +1,8 @@
+using System;
 using System.Threading.Tasks;
 using Firebase;
 using Firebase.Auth;
+using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
@@ -8,6 +10,9 @@ namespace RGN.Modules.SignIn
     {
         private IRGNRolesCore _rgnCore;
         private RGNDeepLink _rgnDeepLink;
+
+        private bool _waitForToken;
+        private bool _lastTokenReceived;
 
         public static void InitializeWindowsDeepLink()
         {
@@ -21,12 +26,14 @@ namespace RGN.Modules.SignIn
         {
             _rgnCore = rgnCore;
         }
+        
         public void Init()
         {
             _rgnDeepLink = new RGNDeepLink();
             _rgnDeepLink.Init(_rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
         }
+        
         public void Dispose()
         {
             if (_rgnDeepLink != null)
@@ -45,11 +52,42 @@ namespace RGN.Modules.SignIn
                 _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
                 return;
             }
+
+            _waitForToken = true;
+            _lastTokenReceived = false;
             _rgnDeepLink.OpenURL();
+
+            EmailSignInFocusWatcher focusWatcher = EmailSignInFocusWatcher.Create();
+            focusWatcher.OnFocusChanged += OnApplicationFocusChanged;
         }
-        private async void OnTokenReceivedAsync(string token)
+
+        private void OnApplicationFocusChanged(EmailSignInFocusWatcher watcher, bool hasFocus)
         {
+            if (hasFocus && !_lastTokenReceived)
+            {
+                _waitForToken = false;
+                
+                watcher.OnFocusChanged -= OnApplicationFocusChanged;
+                watcher.Destroy();
+                
+                _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Cancelled);
+            }
+        }
+
+        private async void OnTokenReceivedAsync(bool cancelled, string token)
+        {
+            _waitForToken = false;
+            _lastTokenReceived = true;
+
+            if (cancelled)
+            {
+                _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Cancelled);
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
+                return;
+            }
+            
             _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
+            
             if (string.IsNullOrEmpty(token))
             {
                 _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
@@ -72,6 +110,7 @@ namespace RGN.Modules.SignIn
                 TryToSingInWithoutLink(email, password);
             }
         }
+        
         public void SendPasswordResetEmail(string email)
         {
             _rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
@@ -94,6 +133,7 @@ namespace RGN.Modules.SignIn
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
+        
         public void SignOut()
         {
             _rgnCore.SignOutRGN();
@@ -146,6 +186,7 @@ namespace RGN.Modules.SignIn
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
+        
         private void TryToSingInWithoutLink(string email, string password)
         {
             _rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task => {

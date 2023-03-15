@@ -9,7 +9,7 @@ namespace RGN.Modules.SignIn
 {
     internal sealed class RGNDeepLink : System.IDisposable
     {
-        internal event Action<string> TokenReceived;
+        internal event Action<bool, string> TokenReceived;
 
         private HttpListener _editorHttpListener;
         private string _redirectUrl;
@@ -104,12 +104,19 @@ namespace RGN.Modules.SignIn
         private void OnDeepLinkActivated(string url)
         {
             Debug.Log("OnDeepLinkActivated with url: " + url);
+            
+            // we need sync here to the dashboard to have same vision for cancelled tokens
+            if (url.Contains("cancelled"))
+            {
+                TokenReceived?.Invoke(true, "");
+                return;
+            }
+            
             string parameters = url.Split("?"[0])[1];
             var parsedParameters = RGNHttpUtility.ParseQueryString(parameters);
-
             string token = parsedParameters["token"];
 
-            TokenReceived?.Invoke(token);
+            TokenReceived?.Invoke(false, token);
         }
 
         private string GetEmailSignInURL()
