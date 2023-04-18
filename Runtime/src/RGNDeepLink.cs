@@ -89,7 +89,7 @@ namespace RGN.Modules.SignIn
 
             HttpListenerContext context;
             try { context = await _editorHttpListener.GetContextAsync(); }
-            catch (ObjectDisposedException exception) { return; }
+            catch (ObjectDisposedException) { return; }
             HttpListenerResponse response = context.Response;
             
             string url = context.Request.Url.ToString();

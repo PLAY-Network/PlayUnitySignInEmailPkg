@@ -10,8 +10,7 @@ namespace RGN.Modules.SignIn
     {
         private IRGNRolesCore _rgnCore;
         private RGNDeepLink _rgnDeepLink;
-
-        private bool _waitForToken;
+        
         private bool _lastTokenReceived;
 
         public static void InitializeWindowsDeepLink()
@@ -52,8 +51,7 @@ namespace RGN.Modules.SignIn
                 _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
                 return;
             }
-
-            _waitForToken = true;
+            
             _lastTokenReceived = false;
             _rgnDeepLink.OpenURL();
 
@@ -65,8 +63,6 @@ namespace RGN.Modules.SignIn
         {
             if (hasFocus && !_lastTokenReceived)
             {
-                _waitForToken = false;
-                
                 watcher.OnFocusChanged -= OnApplicationFocusChanged;
                 watcher.Destroy();
                 
@@ -76,7 +72,6 @@ namespace RGN.Modules.SignIn
 
         private async void OnTokenReceivedAsync(bool cancelled, string token)
         {
-            _waitForToken = false;
             _lastTokenReceived = true;
 
             if (cancelled)
