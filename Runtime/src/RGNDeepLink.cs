@@ -122,9 +122,15 @@ namespace RGN.Modules.SignIn
         private string GetEmailSignInURL()
         {
             ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
-            string baseURL = applicationStore.isProduction ?
-                applicationStore.GetRGNProductionEmailSignInURL :
-                applicationStore.GetRGNStatingEmailSignInURL;
+            string baseURL = applicationStore.GetRGNStatingEmailSignInURL;
+            if (applicationStore.GetRGNEnvironment == EnumRGNEnvironment.Production)
+            {
+                baseURL = applicationStore.GetRGNProductionEmailSignInURL;
+            }
+            else if (applicationStore.GetRGNEnvironment == EnumRGNEnvironment.Development)
+            { // TODO: replace in the future with the development url if needed.
+                baseURL = applicationStore.GetRGNStatingEmailSignInURL;
+            }
             return baseURL;
         }
     }
