@@ -53,8 +53,6 @@ namespace RGN.Samples
             {
                 case EnumLoginState.NotLoggedIn:
                     ToastMessage.I.Show("Not Logged In");
-                    _canvasGroup.interactable = true;
-                    _loadingIndicator.SetEnabled(false);
                     break;
                 case EnumLoginState.Success:
                     string messageSuffix = string.Empty;
