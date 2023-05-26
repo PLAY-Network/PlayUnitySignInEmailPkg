@@ -35,7 +35,11 @@ namespace RGN.Modules.SignIn
             _redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
             #endif
             _baseSignInUrl = GetEmailSignInURL();
-            _finalSignInUrl = _baseSignInUrl + _redirectUrl + "&customToken=true";
+            _finalSignInUrl = 
+                _baseSignInUrl +
+                _redirectUrl +
+                "&customToken=true" +
+                "&appId=" + RGNCore.I.AppIDForRequests;
             Application.deepLinkActivated += OnDeepLinkActivated;
 
             if (!string.IsNullOrEmpty(Application.absoluteURL))
