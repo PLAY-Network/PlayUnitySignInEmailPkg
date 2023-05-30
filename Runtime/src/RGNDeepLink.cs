@@ -38,7 +38,7 @@ namespace RGN.Modules.SignIn
             _finalSignInUrl = 
                 _baseSignInUrl +
                 _redirectUrl +
-                "&customToken=true" +
+                "&returnSecureToken=false" +
                 "&appId=" + RGNCore.I.AppIDForRequests;
             Application.deepLinkActivated += OnDeepLinkActivated;
 
