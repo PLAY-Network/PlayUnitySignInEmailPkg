@@ -35,11 +35,12 @@ namespace RGN.Modules.SignIn
             _redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
             #endif
             _baseSignInUrl = GetEmailSignInURL();
-            _finalSignInUrl = 
+            _finalSignInUrl =
                 _baseSignInUrl +
                 _redirectUrl +
                 "&returnSecureToken=false" +
-                "&appId=" + RGNCore.I.AppIDForRequests;
+                "&appId=" + RGNCore.I.AppIDForRequests +
+                "&lang=" + Utility.LanguageUtility.GetISO631Dash1CodeFromSystemLanguage();
             Application.deepLinkActivated += OnDeepLinkActivated;
 
             if (!string.IsNullOrEmpty(Application.absoluteURL))
