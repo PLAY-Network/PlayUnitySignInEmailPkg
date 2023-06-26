@@ -29,11 +29,16 @@ namespace RGN.Modules.SignIn
             rGNCore.UpdateEvent += WindowsDeepLinks.Tick;
 #endif
             
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             _redirectUrl = RGNHttpUtility.GetEditorRedirectScheme();
-            #else
+#else
             _redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
-            #endif
+#endif
+#if UNITY_IOS && !UNITY_EDITOR
+            iOS.WebViewPlugin.ChangeURLScheme(_redirectUrl);
+            iOS.WebViewPlugin.SetBackButtonText("Back");
+#endif
+
             _baseSignInUrl = GetEmailSignInURL();
             _finalSignInUrl =
                 _baseSignInUrl +
@@ -82,7 +87,11 @@ namespace RGN.Modules.SignIn
 #if UNITY_EDITOR
             HandleDeepLinkInEditorAsync();
 #endif
+#if UNITY_IOS && !UNITY_EDITOR
+            iOS.WebViewPlugin.OpenURL(_finalSignInUrl);
+#else
             Application.OpenURL(_finalSignInUrl); // Send the deeplink redirect url
+#endif
         }
 
         private async void HandleDeepLinkInEditorAsync()
