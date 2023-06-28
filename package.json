@@ -1,7 +1,7 @@
 {
   "name": "io.getready.rgn.signin.email",
   "displayName": "Ready Games Network SDK. SignIn Email",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "unity": "2020.3",
   "description": "The Ready Games Network (RGN) is building mobile-first Web3 tools and technologies to democratize access to game creation.",
   "author": {
@@ -44,7 +44,7 @@
     }
   ],
   "dependencies": {
-    "io.getready.rgn.core": "0.4.0",
-    "io.getready.rgn.impl.firebase": "0.4.0"
+    "io.getready.rgn.core": "0.5.0",
+    "io.getready.rgn.impl.firebase": "0.5.0"
   }
 }
