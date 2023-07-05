@@ -2,12 +2,26 @@ using System.IO;
 using RGN.Modules.SignIn;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 
 namespace RGN.MyEditor
 {
-    public class BuildPostprocess
+    public class DeepLinkManifestHandler : IPreprocessBuildWithReport
     {
+        public int callbackOrder => 0;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+#if UNITY_ANDROID
+            Debug.Log("[Android - DeepLinkManifestHandler] Build PreProcessor preparing manifest");
+            UpdateCustomManifest();
+#endif
+        }
+
+#if UNITY_ANDROID
         [InitializeOnLoadMethod]
+#endif
         public static void UpdateCustomManifest()
         {
             string manifestPath = Application.dataPath + "/Plugins/Android/AndroidManifest.xml";
@@ -22,14 +36,16 @@ namespace RGN.MyEditor
 
             string manifestContent = File.ReadAllText(manifestPath);
 
-            string newIntent = "<intent-filter>\n" +
+            string intentStart = "<intent-filter>\n" +
                 "<action android:name=\"android.intent.action.VIEW\" />\n" +
                 "<category android:name=\"android.intent.category.DEFAULT\" />\n" +
-                "<category android:name=\"android.intent.category.BROWSABLE\" />\n" +
+                "<category android:name=\"android.intent.category.BROWSABLE\" />\n";
+
+            string newIntent = intentStart +
                 "<data android:scheme=\"" + deepLinkRedirectScheme + "\" android:host=\"\" />\n" +
                 "</intent-filter>\n";
 
-            if (!manifestContent.Contains(deepLinkRedirectScheme))
+            if (!manifestContent.Contains(intentStart))
             {
                 // Add the new intent
                 int insertIndex = manifestContent.IndexOf("</activity>");
@@ -39,6 +55,23 @@ namespace RGN.MyEditor
                 Debug.Log("Android Manifest updated");
             }
 
+            string manifestUpdatedContent = File.ReadAllText(manifestPath);
+            string searchStart = "android:scheme=\"rgn";
+            string searchEnd = "\"";
+
+            int indexStart = manifestUpdatedContent.IndexOf(searchStart);
+            if (indexStart != -1)
+            {
+                indexStart += searchStart.Length - 3;  // move to the end of searchStart and substract rgn indexes
+                int indexEnd = manifestUpdatedContent.IndexOf(searchEnd, indexStart);  // find searchEnd starting from indexStart
+
+
+                manifestUpdatedContent = manifestUpdatedContent.Remove(indexStart, indexEnd - indexStart);
+                manifestUpdatedContent = manifestUpdatedContent.Insert(indexStart, deepLinkRedirectScheme);
+
+                File.WriteAllText(manifestPath, manifestUpdatedContent);
+                Debug.Log("Android Manifest redirect scheme updated"); 
+            }
         }
 
         public static void GenerateManifest()
