@@ -48,10 +48,11 @@ namespace RGN.Modules.SignIn
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
-                _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
+                _rgnCore.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
                 return;
             }
-            
+
+            _rgnCore.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
             _lastTokenReceived = false;
             _rgnDeepLink.OpenURL();
 
@@ -66,7 +67,7 @@ namespace RGN.Modules.SignIn
                 watcher.OnFocusChanged -= OnApplicationFocusChanged;
                 watcher.Destroy();
                 
-                _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Cancelled);
+                _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
             }
         }
 
@@ -76,7 +77,7 @@ namespace RGN.Modules.SignIn
 
             if (cancelled)
             {
-                _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Cancelled);
+                _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
                 return;
             }
@@ -85,12 +86,11 @@ namespace RGN.Modules.SignIn
             
             if (string.IsNullOrEmpty(token))
             {
-                _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+                _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
             }
             else
             {
                 await _rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
-                _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
             }
         }
 
@@ -152,7 +152,7 @@ namespace RGN.Modules.SignIn
                     FirebaseAccountLinkException firebaseAccountLinkException = task.Exception.InnerException as FirebaseAccountLinkException;
                     if (firebaseAccountLinkException != null && firebaseAccountLinkException.ErrorCode == (int)AuthError.CredentialAlreadyInUse)
                     {
-                        _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.AccountAlreadyLinked);
+                        _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.AccountAlreadyLinked);
                         return;
                     }
 
@@ -160,24 +160,24 @@ namespace RGN.Modules.SignIn
 
                     if (firebaseException != null)
                     {
-                        EnumLoginError loginError = (AuthError)firebaseException.ErrorCode switch {
-                            AuthError.EmailAlreadyInUse => EnumLoginError.AccountAlreadyLinked,
-                            AuthError.ProviderAlreadyLinked => EnumLoginError.AccountAlreadyLinked,
-                            AuthError.RequiresRecentLogin => EnumLoginError.AccountNeedsRecentLogin,
-                            _ => EnumLoginError.Unknown
+                        EnumLoginResult loginError = (AuthError)firebaseException.ErrorCode switch {
+                            AuthError.EmailAlreadyInUse => EnumLoginResult.AccountAlreadyLinked,
+                            AuthError.ProviderAlreadyLinked => EnumLoginResult.AccountAlreadyLinked,
+                            AuthError.RequiresRecentLogin => EnumLoginResult.AccountNeedsRecentLogin,
+                            _ => EnumLoginResult.Unknown
                         };
 
-                        _rgnCore.SetAuthCompletion(EnumLoginState.Error, loginError);
+                        _rgnCore.SetAuthState(EnumLoginState.Error, loginError);
                         return;
                     }
 
-                    _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+                    _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
                     return;
                 }
 
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: LinkWith Email/Password Successful. " + _rgnCore.ReadyMasterAuth.CurrentUser.UserId + " ");
 
-                _rgnCore.SetAuthCompletion(EnumLoginState.Success, EnumLoginError.Ok);
+                _rgnCore.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
@@ -196,7 +196,7 @@ namespace RGN.Modules.SignIn
                 {
                     Utility.ExceptionHelper.PrintToLog(_rgnCore.Dependencies.Logger, task.Exception);
                     SignOut();
-                    _rgnCore.SetAuthCompletion(EnumLoginState.Error, EnumLoginError.Unknown);
+                    _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
                     return;
                 }
 

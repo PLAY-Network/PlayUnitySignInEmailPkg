@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using RGN.Impl.Firebase;
 using RGN.Modules.SignIn;
 using RGN.UI;
@@ -47,9 +46,9 @@ namespace RGN.Samples
             _loadingIndicator.SetEnabled(true);
             EmailSignInModule.I.SignOut();
         }
-        private void OnAuthStateChanged(EnumLoginState state, EnumLoginError error)
+        private void OnAuthStateChanged(AuthState authState)
         {
-            switch (state)
+            switch (authState.LoginState)
             {
                 case EnumLoginState.NotLoggedIn:
                     ToastMessage.I.Show("Not Logged In");
@@ -65,15 +64,14 @@ namespace RGN.Samples
                         messageSuffix = " with " + RGNCore.I.MasterAppUser.Email;
                     }
                     ToastMessage.I.ShowSuccess("Successfully Logged In" + messageSuffix);
-                    _canvasGroup.interactable = true;
-                    _loadingIndicator.SetEnabled(false);
                     break;
                 case EnumLoginState.Error:
-                    ToastMessage.I.ShowError("Login Error: " + error);
-                    _canvasGroup.interactable = true;
-                    _loadingIndicator.SetEnabled(false);
+                    ToastMessage.I.ShowError("Login Error: " + authState.LoginResult);
                     break;
             };
+            bool isProcessing = authState.LoginState == EnumLoginState.Processing;
+            _canvasGroup.interactable = !isProcessing;
+            _loadingIndicator.SetEnabled(isProcessing);
             UpdateUserInfoText();
         }
         private void UpdateUserInfoText()
