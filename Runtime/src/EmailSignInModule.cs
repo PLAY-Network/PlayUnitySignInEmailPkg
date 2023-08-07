@@ -1,8 +1,4 @@
-using System;
 using System.Threading.Tasks;
-using Firebase;
-using Firebase.Auth;
-using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
@@ -10,7 +6,7 @@ namespace RGN.Modules.SignIn
     {
         private IRGNRolesCore _rgnCore;
         private RGNDeepLink _rgnDeepLink;
-        
+
         private bool _lastTokenReceived;
 
         public static void InitializeWindowsDeepLink()
@@ -25,14 +21,14 @@ namespace RGN.Modules.SignIn
         {
             _rgnCore = rgnCore;
         }
-        
+
         public void Init()
         {
             _rgnDeepLink = new RGNDeepLink();
             _rgnDeepLink.Init(_rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
         }
-        
+
         public void Dispose()
         {
             if (_rgnDeepLink != null)
@@ -66,7 +62,7 @@ namespace RGN.Modules.SignIn
             {
                 watcher.OnFocusChanged -= OnApplicationFocusChanged;
                 watcher.Destroy();
-                
+
                 _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
             }
         }
@@ -81,9 +77,9 @@ namespace RGN.Modules.SignIn
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
                 return;
             }
-            
+
             _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
-            
+
             if (string.IsNullOrEmpty(token))
             {
                 _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
@@ -94,18 +90,11 @@ namespace RGN.Modules.SignIn
             }
         }
 
-        public void TryToSignIn(string email, string password, bool tryToLinkToCurrentAccount = false)
+        public void TryToSignIn(string email, string password)
         {
-            if (tryToLinkToCurrentAccount)
-            {
-                TryToLink(email, password);
-            }
-            else
-            {
-                TryToSingInWithoutLink(email, password);
-            }
+            TryToSingInWithoutLink(email, password);
         }
-        
+
         public void SendPasswordResetEmail(string email)
         {
             _rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
@@ -128,60 +117,12 @@ namespace RGN.Modules.SignIn
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
-        
+
         public void SignOut()
         {
             _rgnCore.SignOutRGN();
         }
 
-        private void TryToLink(string email, string password)
-        {
-            _rgnCore.Dependencies.Logger.Log("EmailSignInModule]: TryToSignIn(" + email + ", " + string.IsNullOrEmpty(password) + ")");
-            var credential = _rgnCore.ReadyMasterAuth.emailAuthProvider.GetCredential(email, password);
-
-            _rgnCore.ReadyMasterAuth.CurrentUser.LinkAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task => {
-                if (task.IsCanceled)
-                {
-                    _rgnCore.Dependencies.Logger.LogWarning("EmailSignInModule]: LinkAndRetrieveDataWithCredentialAsync was cancelled");
-                    return;
-                }
-
-                if (task.IsFaulted)
-                {
-                    Utility.ExceptionHelper.PrintToLog(_rgnCore.Dependencies.Logger, task.Exception);
-                    FirebaseAccountLinkException firebaseAccountLinkException = task.Exception.InnerException as FirebaseAccountLinkException;
-                    if (firebaseAccountLinkException != null && firebaseAccountLinkException.ErrorCode == (int)AuthError.CredentialAlreadyInUse)
-                    {
-                        _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.AccountAlreadyLinked);
-                        return;
-                    }
-
-                    FirebaseException firebaseException = task.Exception.InnerException as FirebaseException;
-
-                    if (firebaseException != null)
-                    {
-                        EnumLoginResult loginError = (AuthError)firebaseException.ErrorCode switch {
-                            AuthError.EmailAlreadyInUse => EnumLoginResult.AccountAlreadyLinked,
-                            AuthError.ProviderAlreadyLinked => EnumLoginResult.AccountAlreadyLinked,
-                            AuthError.RequiresRecentLogin => EnumLoginResult.AccountNeedsRecentLogin,
-                            _ => EnumLoginResult.Unknown
-                        };
-
-                        _rgnCore.SetAuthState(EnumLoginState.Error, loginError);
-                        return;
-                    }
-
-                    _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
-                    return;
-                }
-
-                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: LinkWith Email/Password Successful. " + _rgnCore.ReadyMasterAuth.CurrentUser.UserId + " ");
-
-                _rgnCore.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
-            },
-            TaskScheduler.FromCurrentSynchronizationContext());
-        }
-        
         private void TryToSingInWithoutLink(string email, string password)
         {
             _rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task => {
@@ -200,7 +141,12 @@ namespace RGN.Modules.SignIn
                     return;
                 }
 
-                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, signed in");
+                string email = "not logged in";
+                if (_rgnCore.MasterAppUser != null)
+                {
+                    email = _rgnCore.MasterAppUser.Email;
+                }
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, the user successfully signed in: " + email);
             },
             TaskScheduler.FromCurrentSynchronizationContext());
         }
