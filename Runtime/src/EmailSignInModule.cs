@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
-        private IRGNRolesCore _rgnCore;
         private RGNDeepLink _rgnDeepLink;
 
         private bool _lastTokenReceived;
@@ -17,19 +17,13 @@ namespace RGN.Modules.SignIn
 #endif
         }
 
-        public void SetRGNCore(IRGNRolesCore rgnCore)
-        {
-            _rgnCore = rgnCore;
-        }
-
-        public void Init()
+        public override void Init()
         {
             _rgnDeepLink = new RGNDeepLink();
             _rgnDeepLink.Init(_rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
         }
-
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
             if (_rgnDeepLink != null)
             {
@@ -37,6 +31,7 @@ namespace RGN.Modules.SignIn
                 _rgnDeepLink.Dispose();
                 _rgnDeepLink = null;
             }
+            base.Dispose(disposing);
         }
 
         public void TryToSignIn()
@@ -90,7 +85,7 @@ namespace RGN.Modules.SignIn
             }
         }
 
-        public void TryToSignIn(string email, string password)
+        internal void TryToSignIn(string email, string password)
         {
             TryToSingInWithoutLink(email, password);
         }
