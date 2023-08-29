@@ -82,15 +82,20 @@ namespace RGN.Modules.SignIn
             TokenReceived = null;
         }
 
-        internal void OpenURL()
+        internal void OpenURL(string idToken)
         {
+            string idTokenInfo = string.Empty;
+            if (!string.IsNullOrEmpty(idToken))
+            {
+                idTokenInfo = "&idToken=" + idToken;
+            }
 #if UNITY_EDITOR
             HandleDeepLinkInEditorAsync();
 #endif
 #if UNITY_IOS && !UNITY_EDITOR
-            iOS.WebViewPlugin.OpenURL(_finalSignInUrl);
+            iOS.WebViewPlugin.OpenURL(_finalSignInUrl + idTokenInfo);
 #else
-            Application.OpenURL(_finalSignInUrl); // Send the deeplink redirect url
+            Application.OpenURL(_finalSignInUrl + idTokenInfo); // Send the deeplink redirect url
 #endif
         }
 

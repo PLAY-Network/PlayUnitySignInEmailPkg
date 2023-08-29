@@ -34,7 +34,7 @@ namespace RGN.Modules.SignIn
             base.Dispose(disposing);
         }
 
-        public void TryToSignIn()
+        public async void TryToSignIn()
         {
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
@@ -45,7 +45,12 @@ namespace RGN.Modules.SignIn
 
             _rgnCore.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
             _lastTokenReceived = false;
-            _rgnDeepLink.OpenURL();
+            string idToken = string.Empty;
+            if (_rgnCore.MasterAppUser != null)
+            {
+                idToken = await _rgnCore.MasterAppUser?.TokenAsync(false);
+            }
+            _rgnDeepLink.OpenURL(idToken);
 
             EmailSignInFocusWatcher focusWatcher = EmailSignInFocusWatcher.Create();
             focusWatcher.OnFocusChanged += OnApplicationFocusChanged;
