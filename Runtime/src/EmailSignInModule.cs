@@ -39,11 +39,11 @@ namespace RGN.Modules.SignIn
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
-                _rgnCore.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
+                RGNCore.IInternal.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
                 return;
             }
 
-            _rgnCore.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
+            RGNCore.IInternal.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
             _lastTokenReceived = false;
             string idToken = string.Empty;
             if (_rgnCore.MasterAppUser != null)
@@ -63,7 +63,7 @@ namespace RGN.Modules.SignIn
                 watcher.OnFocusChanged -= OnApplicationFocusChanged;
                 watcher.Destroy();
 
-                _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
+                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
             }
         }
 
@@ -73,7 +73,7 @@ namespace RGN.Modules.SignIn
 
             if (cancelled)
             {
-                _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
+                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
                 return;
             }
@@ -82,7 +82,7 @@ namespace RGN.Modules.SignIn
 
             if (string.IsNullOrEmpty(token))
             {
-                _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
+                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
             }
             else
             {
@@ -120,7 +120,7 @@ namespace RGN.Modules.SignIn
 
         public void SignOut()
         {
-            _rgnCore.SignOutRGN();
+            RGNCore.IInternal.SignOutRGN();
         }
 
         private void TryToSingInWithoutLink(string email, string password)
@@ -137,7 +137,7 @@ namespace RGN.Modules.SignIn
                 {
                     Utility.ExceptionHelper.PrintToLog(_rgnCore.Dependencies.Logger, task.Exception);
                     SignOut();
-                    _rgnCore.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
+                    RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
                     return;
                 }
 
