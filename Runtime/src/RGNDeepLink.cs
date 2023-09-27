@@ -29,13 +29,23 @@ namespace RGN.Modules.SignIn
             rGNCore.UpdateEvent += WindowsDeepLinks.Tick;
 #endif
             
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             _redirectUrl = RGNHttpUtility.GetEditorRedirectScheme();
-            #else
+#else
             _redirectUrl = RGNHttpUtility.GetDeepLinkRedirectScheme();
-            #endif
+#endif
+#if UNITY_IOS && !UNITY_EDITOR
+            iOS.WebViewPlugin.ChangeURLScheme(_redirectUrl);
+            iOS.WebViewPlugin.SetBackButtonText("Back");
+#endif
+
             _baseSignInUrl = GetEmailSignInURL();
-            _finalSignInUrl = _baseSignInUrl + _redirectUrl + "&customToken=true";
+            _finalSignInUrl =
+                _baseSignInUrl +
+                _redirectUrl +
+                "&returnSecureToken=false" +
+                "&appId=" + RGNCore.I.AppIDForRequests +
+                "&lang=" + Utility.LanguageUtility.GetISO631Dash1CodeFromSystemLanguage();
             Application.deepLinkActivated += OnDeepLinkActivated;
 
             if (!string.IsNullOrEmpty(Application.absoluteURL))
@@ -72,12 +82,21 @@ namespace RGN.Modules.SignIn
             TokenReceived = null;
         }
 
-        internal void OpenURL()
+        internal void OpenURL(string idToken)
         {
+            string idTokenInfo = string.Empty;
+            if (!string.IsNullOrEmpty(idToken))
+            {
+                idTokenInfo = "&idToken=" + idToken;
+            }
 #if UNITY_EDITOR
             HandleDeepLinkInEditorAsync();
 #endif
-            Application.OpenURL(_finalSignInUrl); // Send the deeplink redirect url
+#if UNITY_IOS && !UNITY_EDITOR
+            iOS.WebViewPlugin.OpenURL(_finalSignInUrl + idTokenInfo);
+#else
+            Application.OpenURL(_finalSignInUrl + idTokenInfo); // Send the deeplink redirect url
+#endif
         }
 
         private async void HandleDeepLinkInEditorAsync()
@@ -122,9 +141,15 @@ namespace RGN.Modules.SignIn
         private string GetEmailSignInURL()
         {
             ApplicationStore applicationStore = ApplicationStore.LoadFromResources();
-            string baseURL = applicationStore.isProduction ?
-                applicationStore.GetRGNProductionEmailSignInURL :
-                applicationStore.GetRGNStatingEmailSignInURL;
+            string baseURL = applicationStore.GetRGNStagingEmailSignInURL;
+            if (applicationStore.GetRGNEnvironment == EnumRGNEnvironment.Production)
+            {
+                baseURL = applicationStore.GetRGNProductionEmailSignInURL;
+            }
+            else if (applicationStore.GetRGNEnvironment == EnumRGNEnvironment.Development)
+            {
+                baseURL = applicationStore.GetRGNDevelopmentEmailSignInURL;
+            }
             return baseURL;
         }
     }
