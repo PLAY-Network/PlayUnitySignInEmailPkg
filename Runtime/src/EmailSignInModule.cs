@@ -19,6 +19,7 @@ namespace RGN.Modules.SignIn
 
         public override void Init()
         {
+            InitializeWindowsDeepLink();
             _rgnDeepLink = new RGNDeepLink();
             _rgnDeepLink.Init(_rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
