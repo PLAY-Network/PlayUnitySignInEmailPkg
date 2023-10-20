@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
+    [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
         private RGNDeepLink _rgnDeepLink;
