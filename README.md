@@ -1,2 +1,2 @@
 # RGN SignInEmail
-Package version: 0.8.0-dev.417
+Package version: 0.8.0-dev.418
