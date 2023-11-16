@@ -44,7 +44,6 @@
     }
   ],
   "dependencies": {
-    "io.getready.rgn.core": "0.8.0",
-    "io.getready.rgn.impl.firebase": "0.8.0"
+    "io.getready.rgn.core": "0.8.0"
   }
 }

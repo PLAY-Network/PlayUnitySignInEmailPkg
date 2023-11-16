@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
+    [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
         private RGNDeepLink _rgnDeepLink;
@@ -19,6 +20,7 @@ namespace RGN.Modules.SignIn
 
         public override void Init()
         {
+            InitializeWindowsDeepLink();
             _rgnDeepLink = new RGNDeepLink();
             _rgnDeepLink.Init(_rgnCore);
             _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
