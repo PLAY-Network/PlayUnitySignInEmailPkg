@@ -38,12 +38,13 @@ namespace RGN.Modules.SignIn
 
         public async void TryToSignIn()
         {
-            if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
-            {
-                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
-                return;
-            }
+            // TODO TEMPORARY
+            //if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
+            //{
+            //    _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
+            //    RGNCore.IInternal.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
+            //    return;
+            //}
 
             RGNCore.IInternal.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
             _lastTokenReceived = false;
