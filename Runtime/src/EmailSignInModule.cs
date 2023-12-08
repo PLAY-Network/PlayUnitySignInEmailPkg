@@ -1,79 +1,32 @@
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace RGN.Modules.SignIn
 {
     [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
-        private RGNDeepLink _rgnDeepLink;
-
-        private bool _lastTokenReceived;
-
-        public static void InitializeWindowsDeepLink()
-        {
-#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
-            if (WindowsDeepLinks.IsCustomUrlRegistered()) { return; }
-            WindowsDeepLinks.StartHandling();
-#endif
-        }
-
-        public override void Init()
-        {
-            InitializeWindowsDeepLink();
-            _rgnDeepLink = new RGNDeepLink();
-            _rgnDeepLink.Init(_rgnCore);
-            _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
-        }
-        protected override void Dispose(bool disposing)
-        {
-            if (_rgnDeepLink != null)
-            {
-                _rgnDeepLink.TokenReceived -= OnTokenReceivedAsync;
-                _rgnDeepLink.Dispose();
-                _rgnDeepLink = null;
-            }
-            base.Dispose(disposing);
-        }
-
         public async void TryToSignIn()
         {
-            // TODO TEMPORARY
-            //if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
-            //{
-            //    _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
-            //    RGNCore.IInternal.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
-            //    return;
-            //}
+            if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
+            {
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
+                RGNCore.IInternal.SetAuthState(EnumLoginState.Success, EnumLoginResult.Ok);
+                return;
+            }
 
             RGNCore.IInternal.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
-            _lastTokenReceived = false;
+
             string idToken = string.Empty;
             if (_rgnCore.MasterAppUser != null)
             {
-                idToken = await _rgnCore.MasterAppUser?.TokenAsync(false);
+                idToken = await _rgnCore.MasterAppUser.TokenAsync(false);
             }
-            _rgnDeepLink.OpenURL(idToken);
-
-            EmailSignInFocusWatcher focusWatcher = EmailSignInFocusWatcher.Create();
-            focusWatcher.OnFocusChanged += OnApplicationFocusChanged;
+            
+            RGNCore.I.Dependencies.WebForm.SignIn(OnSignInWebFormRedirect, idToken);
         }
-
-        private void OnApplicationFocusChanged(EmailSignInFocusWatcher watcher, bool hasFocus)
+        
+        private async void OnSignInWebFormRedirect(bool cancelled, string token)
         {
-            if (hasFocus && !_lastTokenReceived)
-            {
-                watcher.OnFocusChanged -= OnApplicationFocusChanged;
-                watcher.Destroy();
-
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
-            }
-        }
-
-        private async void OnTokenReceivedAsync(bool cancelled, string token)
-        {
-            _lastTokenReceived = true;
-
             if (cancelled)
             {
                 RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
