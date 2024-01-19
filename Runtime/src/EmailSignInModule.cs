@@ -42,6 +42,7 @@ namespace RGN.Modules.SignIn
             }
             else
             {
+                RGNCore.IInternal.SignOutRGN(false);
                 await _rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
             }
         }
