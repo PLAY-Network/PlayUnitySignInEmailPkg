@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using RGN.ImplDependencies.Core.Auth;
 
 namespace RGN.Modules.SignIn
 {
@@ -25,7 +26,7 @@ namespace RGN.Modules.SignIn
             RGNCore.I.Dependencies.WebForm.SignIn(OnSignInWebFormRedirect, idToken);
         }
         
-        private async void OnSignInWebFormRedirect(bool cancelled, string token)
+        private async void OnSignInWebFormRedirect(bool cancelled, string refreshToken)
         {
             if (cancelled)
             {
@@ -34,16 +35,16 @@ namespace RGN.Modules.SignIn
                 return;
             }
 
-            _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
+            _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Refresh token received: " + refreshToken);
 
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(refreshToken))
             {
                 RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
             }
             else
             {
-                RGNCore.IInternal.SignOutRGN(false);
-                await _rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
+                IUserTokensPair userTokensPair = await _rgnCore.ReadyMasterAuth.RefreshTokensAsync(refreshToken);
+                _rgnCore.ReadyMasterAuth.SetUserTokens(userTokensPair.IdToken, userTokensPair.RefreshToken);
             }
         }
 
@@ -77,7 +78,7 @@ namespace RGN.Modules.SignIn
 
         public void SignOut()
         {
-            RGNCore.IInternal.SignOutRGN();
+            RGNCore.IInternal.SignOut();
         }
 
         private void TryToSingInWithoutLink(string email, string password)
