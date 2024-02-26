@@ -8,6 +8,15 @@ namespace RGN.Modules.SignIn
     {
         public async void TryToSignIn()
         {
+            if (_rgnCore.Dependencies.RGNAnalytics != null)
+            {
+                const string PARAMETERS = "{\"providers\": \"Email\"}";
+                await _rgnCore.Dependencies.RGNAnalytics.LogEventAsync("in_game_login_attempt", PARAMETERS);
+            }
+            else
+            {
+                _rgnCore.Dependencies.Logger.Log("Can not log 'in_game_login_attempt' analytics event. RGN Analytics is not installed");
+            }
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
@@ -76,8 +85,17 @@ namespace RGN.Modules.SignIn
             TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        public void SignOut()
+        public async void SignOut()
         {
+            if (_rgnCore.Dependencies.RGNAnalytics != null)
+            {
+                const string PARAMETERS = "{\"providers\": \"Email\"}";
+                await _rgnCore.Dependencies.RGNAnalytics.LogEventAsync("in_game_log_out", PARAMETERS);
+            }
+            else
+            {
+                _rgnCore.Dependencies.Logger.Log("Can not log 'in_game_log_out' analytics event. RGN Analytics is not installed");
+            }
             RGNCore.IInternal.SignOut();
         }
 
