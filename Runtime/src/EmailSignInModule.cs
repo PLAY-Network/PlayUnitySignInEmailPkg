@@ -1,12 +1,13 @@
 using System.Threading.Tasks;
 using RGN.ImplDependencies.Core.Auth;
+using RGN.Modules.SignIn.Models;
 
 namespace RGN.Modules.SignIn
 {
     [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
-        public async void TryToSignIn()
+        public async void TryToSignIn(RGNEmailSignInCallbackDelegate callback = null)
         {
             if (_rgnCore.Dependencies.RGNAnalytics != null)
             {
@@ -17,6 +18,7 @@ namespace RGN.Modules.SignIn
             {
                 _rgnCore.Dependencies.Logger.Log("Can not log 'in_game_login_attempt' analytics event. RGN Analytics is not installed");
             }
+
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
@@ -32,34 +34,32 @@ namespace RGN.Modules.SignIn
                 idToken = await _rgnCore.MasterAppUser.TokenAsync(false);
             }
             
-            RGNCore.I.Dependencies.WebForm.SignIn(OnSignInWebFormRedirect, idToken);
-        }
-        
-        private async void OnSignInWebFormRedirect(bool cancelled, string refreshToken)
-        {
-            if (cancelled)
-            {
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
-                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
-                return;
-            }
+            RGNCore.I.Dependencies.WebForm.SignIn(OnEmailSignInWebFormRedirectCallback, idToken);
 
-            _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Refresh token received: " + refreshToken);
-
-            if (string.IsNullOrEmpty(refreshToken))
+            async void OnEmailSignInWebFormRedirectCallback(bool cancelled, string refreshToken)
             {
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
-            }
-            else
-            {
-                IUserTokensPair userTokensPair = await _rgnCore.ReadyMasterAuth.RefreshTokensAsync(refreshToken);
-                _rgnCore.ReadyMasterAuth.SetUserTokens(userTokensPair.IdToken, userTokensPair.RefreshToken);
-            }
-        }
+                if (cancelled)
+                {
+                    RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
+                    callback?.Invoke(false);
+                    _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
+                    return;
+                }
 
-        internal void TryToSignIn(string email, string password)
-        {
-            TryToSingInWithoutLink(email, password);
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Refresh token received: " + refreshToken);
+
+                if (string.IsNullOrEmpty(refreshToken))
+                {
+                    RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
+                    callback?.Invoke(false);
+                }
+                else
+                {
+                    IUserTokensPair userTokensPair = await _rgnCore.ReadyMasterAuth.RefreshTokensAsync(refreshToken);
+                    _rgnCore.ReadyMasterAuth.SetUserTokens(userTokensPair.IdToken, userTokensPair.RefreshToken);
+                    callback?.Invoke(true);
+                }
+            }
         }
 
         public void SendPasswordResetEmail(string email)
@@ -99,6 +99,11 @@ namespace RGN.Modules.SignIn
             RGNCore.IInternal.SignOut();
         }
 
+        internal void TryToSignIn(string email, string password)
+        {
+            TryToSingInWithoutLink(email, password);
+        }
+
         private void TryToSingInWithoutLink(string email, string password)
         {
             _rgnCore.ReadyMasterAuth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task => {
@@ -116,8 +121,7 @@ namespace RGN.Modules.SignIn
                     RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
                     return;
                 }
-
-                string email = "not logged in";
+                
                 if (_rgnCore.MasterAppUser != null)
                 {
                     email = _rgnCore.MasterAppUser.Email;
