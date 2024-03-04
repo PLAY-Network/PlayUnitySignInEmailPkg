@@ -9,16 +9,7 @@ namespace RGN.Modules.SignIn
     {
         public async void TryToSignIn(RGNEmailSignInCallbackDelegate callback = null)
         {
-            if (_rgnCore.Dependencies.RGNAnalytics != null)
-            {
-                const string PARAMETERS = "{\"providers\": \"Email\"}";
-                await _rgnCore.Dependencies.RGNAnalytics.LogEventAsync("in_game_login_attempt", PARAMETERS);
-            }
-            else
-            {
-                _rgnCore.Dependencies.Logger.Log("Can not log 'in_game_login_attempt' analytics event. RGN Analytics is not installed");
-            }
-
+            LogAnalyticsEventAsync("in_game_login_attempt");
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
@@ -87,15 +78,7 @@ namespace RGN.Modules.SignIn
 
         public async void SignOut()
         {
-            if (_rgnCore.Dependencies.RGNAnalytics != null)
-            {
-                const string PARAMETERS = "{\"providers\": \"Email\"}";
-                await _rgnCore.Dependencies.RGNAnalytics.LogEventAsync("in_game_log_out", PARAMETERS);
-            }
-            else
-            {
-                _rgnCore.Dependencies.Logger.Log("Can not log 'in_game_log_out' analytics event. RGN Analytics is not installed");
-            }
+            LogAnalyticsEventAsync("in_game_log_out");
             RGNCore.IInternal.SignOut();
         }
 
@@ -129,6 +112,19 @@ namespace RGN.Modules.SignIn
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, the user successfully signed in: " + email);
             },
             TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private async void LogAnalyticsEventAsync(string eventName)
+        {
+            if (_rgnCore.Dependencies.RGNAnalytics != null)
+            {
+                const string ANALYTIC_EVENTS_PARAMETERS = "{\"providers\": \"Email\"}";
+                await _rgnCore.Dependencies.RGNAnalytics.LogEventAsync(eventName, ANALYTIC_EVENTS_PARAMETERS);
+            }
+            else
+            {
+                _rgnCore.Dependencies.Logger.Log($"Can not log '{eventName}' analytics event. RGN Analytics is not installed");
+            }
         }
     }
 }
