@@ -1,43 +1,15 @@
 using System.Threading.Tasks;
-using UnityEngine;
+using RGN.ImplDependencies.Core.Auth;
+using RGN.Modules.SignIn.Models;
 
 namespace RGN.Modules.SignIn
 {
     [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
-        private RGNDeepLink _rgnDeepLink;
-
-        private bool _lastTokenReceived;
-
-        public static void InitializeWindowsDeepLink()
+        public async void TryToSignIn(RGNEmailSignInCallbackDelegate callback = null)
         {
-#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
-            if (WindowsDeepLinks.IsCustomUrlRegistered()) { return; }
-            WindowsDeepLinks.StartHandling();
-#endif
-        }
-
-        public override void Init()
-        {
-            InitializeWindowsDeepLink();
-            _rgnDeepLink = new RGNDeepLink();
-            _rgnDeepLink.Init(_rgnCore);
-            _rgnDeepLink.TokenReceived += OnTokenReceivedAsync;
-        }
-        protected override void Dispose(bool disposing)
-        {
-            if (_rgnDeepLink != null)
-            {
-                _rgnDeepLink.TokenReceived -= OnTokenReceivedAsync;
-                _rgnDeepLink.Dispose();
-                _rgnDeepLink = null;
-            }
-            base.Dispose(disposing);
-        }
-
-        public async void TryToSignIn()
-        {
+            LogAnalyticsEventAsync("in_game_login_attempt");
             if (_rgnCore.AuthorizedProviders.HasFlag(EnumAuthProvider.Email))
             {
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Already logged in with email");
@@ -46,55 +18,39 @@ namespace RGN.Modules.SignIn
             }
 
             RGNCore.IInternal.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
-            _lastTokenReceived = false;
+
             string idToken = string.Empty;
             if (_rgnCore.MasterAppUser != null)
             {
-                idToken = await _rgnCore.MasterAppUser?.TokenAsync(false);
+                idToken = await _rgnCore.MasterAppUser.TokenAsync(false);
             }
-            _rgnDeepLink.OpenURL(idToken);
+            
+            RGNCore.I.Dependencies.WebForm.SignIn(OnEmailSignInWebFormRedirectCallback, idToken);
 
-            EmailSignInFocusWatcher focusWatcher = EmailSignInFocusWatcher.Create();
-            focusWatcher.OnFocusChanged += OnApplicationFocusChanged;
-        }
-
-        private void OnApplicationFocusChanged(EmailSignInFocusWatcher watcher, bool hasFocus)
-        {
-            if (hasFocus && !_lastTokenReceived)
+            async void OnEmailSignInWebFormRedirectCallback(bool cancelled, string refreshToken)
             {
-                watcher.OnFocusChanged -= OnApplicationFocusChanged;
-                watcher.Destroy();
+                if (cancelled)
+                {
+                    RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
+                    callback?.Invoke(false);
+                    _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
+                    return;
+                }
 
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
+                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Refresh token received: " + refreshToken);
+
+                if (string.IsNullOrEmpty(refreshToken))
+                {
+                    RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
+                    callback?.Invoke(false);
+                }
+                else
+                {
+                    IUserTokensPair userTokensPair = await _rgnCore.ReadyMasterAuth.RefreshTokensAsync(refreshToken);
+                    _rgnCore.ReadyMasterAuth.SetUserTokens(userTokensPair.IdToken, userTokensPair.RefreshToken);
+                    callback?.Invoke(true);
+                }
             }
-        }
-
-        private async void OnTokenReceivedAsync(bool cancelled, string token)
-        {
-            _lastTokenReceived = true;
-
-            if (cancelled)
-            {
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Cancelled);
-                _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Login cancelled");
-                return;
-            }
-
-            _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Token received: " + token);
-
-            if (string.IsNullOrEmpty(token))
-            {
-                RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
-            }
-            else
-            {
-                await _rgnCore.ReadyMasterAuth.SignInWithCustomTokenAsync(token);
-            }
-        }
-
-        internal void TryToSignIn(string email, string password)
-        {
-            TryToSingInWithoutLink(email, password);
         }
 
         public void SendPasswordResetEmail(string email)
@@ -120,9 +76,15 @@ namespace RGN.Modules.SignIn
             TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        public void SignOut()
+        public async void SignOut()
         {
-            RGNCore.IInternal.SignOutRGN();
+            LogAnalyticsEventAsync("in_game_log_out");
+            RGNCore.IInternal.SignOut();
+        }
+
+        internal void TryToSignIn(string email, string password)
+        {
+            TryToSingInWithoutLink(email, password);
         }
 
         private void TryToSingInWithoutLink(string email, string password)
@@ -142,8 +104,7 @@ namespace RGN.Modules.SignIn
                     RGNCore.IInternal.SetAuthState(EnumLoginState.Error, EnumLoginResult.Unknown);
                     return;
                 }
-
-                string email = "not logged in";
+                
                 if (_rgnCore.MasterAppUser != null)
                 {
                     email = _rgnCore.MasterAppUser.Email;
@@ -151,6 +112,19 @@ namespace RGN.Modules.SignIn
                 _rgnCore.Dependencies.Logger.Log("[EmailSignInModule]: Email/Password, the user successfully signed in: " + email);
             },
             TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private async void LogAnalyticsEventAsync(string eventName)
+        {
+            if (_rgnCore.Dependencies.RGNAnalytics != null)
+            {
+                const string ANALYTIC_EVENTS_PARAMETERS = "{\"providers\": \"Email\"}";
+                await _rgnCore.Dependencies.RGNAnalytics.LogEventAsync(eventName, ANALYTIC_EVENTS_PARAMETERS);
+            }
+            else
+            {
+                _rgnCore.Dependencies.Logger.Log($"Can not log '{eventName}' analytics event. RGN Analytics is not installed");
+            }
         }
     }
 }
