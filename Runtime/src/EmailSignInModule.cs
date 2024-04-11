@@ -76,7 +76,7 @@ namespace RGN.Modules.SignIn
             TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        public async void SignOut()
+        public void SignOut()
         {
             LogAnalyticsEventAsync("in_game_log_out");
             RGNCore.IInternal.SignOut();
