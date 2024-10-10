@@ -1,5 +1,8 @@
+using System.Threading;
 using System.Threading.Tasks;
 using RGN.ImplDependencies.Core.Auth;
+using RGN.ImplDependencies.Engine;
+using RGN.ImplDependencies.WebForm;
 using RGN.Modules.SignIn.Models;
 
 namespace RGN.Modules.SignIn
@@ -7,6 +10,8 @@ namespace RGN.Modules.SignIn
     [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
+        private const float POLL_TOKEN_WITH_DEVICE_CODE_INTERVAL_SEC = 3f;
+
         public async void TryToSignIn(RGNEmailSignInCallbackDelegate callback = null)
         {
             LogAnalyticsEventAsync("in_game_login_attempt");
@@ -51,6 +56,53 @@ namespace RGN.Modules.SignIn
                     callback?.Invoke(true);
                 }
             }
+        }
+
+        public async Task<string> RequestOAuthDeviceCodeAsync(CancellationToken cancellationToken = default)
+        {
+            RequestDeviceCodeResponse requestDeviceCodeResponse = await _rgnCore.ReadyMasterAuth
+                .RequestOAuthDeviceCodeAsync(cancellationToken);
+            return requestDeviceCodeResponse.deviceCode;
+        }
+
+        public async Task<bool> SignInWithOAuthDeviceCodeAsync(string deviceCode,
+            CancellationToken cancellationToken = default)
+        {
+            IWebForm webFormService = _rgnCore.Dependencies.WebForm;
+            ITime timeService = _rgnCore.Dependencies.Time;
+
+            RGNCore.IInternal.SetAuthState(EnumLoginState.Processing, EnumLoginResult.None);
+
+            string idToken = _rgnCore.MasterAppUser != null
+                ? await _rgnCore.MasterAppUser.TokenAsync(false, cancellationToken)
+                : string.Empty;
+
+            webFormService.SignInWithDeviceCode(deviceCode, idToken);
+
+            do
+            {
+                PollTokenWithDeviceCodeResponse pollResponse = await _rgnCore.ReadyMasterAuth
+                    .PollTokenWithDeviceCodeAsync(deviceCode, cancellationToken);
+
+                switch (pollResponse.status)
+                {
+                    case "completed":
+                        IUserTokensPair userTokens = await _rgnCore.ReadyMasterAuth
+                            .RefreshTokensAsync(pollResponse.token, cancellationToken);
+                        _rgnCore.ReadyMasterAuth
+                            .SetUserTokens(userTokens.IdToken, userTokens.RefreshToken);
+                        return true;
+                    case "expired":
+                        return false;
+                }
+
+                float delayStartTime = timeService.time;
+                while (timeService.time < delayStartTime + POLL_TOKEN_WITH_DEVICE_CODE_INTERVAL_SEC)
+                {
+                    await Task.Yield();
+                }
+            }
+            while (true);
         }
 
         public void SendPasswordResetEmail(string email)
