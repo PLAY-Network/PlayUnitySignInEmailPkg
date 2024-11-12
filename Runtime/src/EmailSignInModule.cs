@@ -1,5 +1,8 @@
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using RGN.ImplDependencies.Core.Auth;
+using RGN.Modules.SignIn.DeviceFlow;
 using RGN.Modules.SignIn.Models;
 
 namespace RGN.Modules.SignIn
@@ -7,6 +10,8 @@ namespace RGN.Modules.SignIn
     [Attributes.GeneratorExclude]
     public class EmailSignInModule : BaseModule<EmailSignInModule>, IRGNModule
     {
+        private Func<CancellationToken, Task<ISignInWithDeviceCodeIntent>> _signInWithDeviceCodePatch;
+
         public async void TryToSignIn(RGNEmailSignInCallbackDelegate callback = null)
         {
             LogAnalyticsEventAsync("in_game_login_attempt");
@@ -53,6 +58,18 @@ namespace RGN.Modules.SignIn
             }
         }
 
+        public async Task<ISignInWithDeviceCodeIntent> SignInWithDeviceCodeAsync(CancellationToken cancellationToken = default)
+        {
+            if (_signInWithDeviceCodePatch != null)
+            {
+                return await _signInWithDeviceCodePatch(cancellationToken);
+            }
+
+            SignInWithDeviceCodeIntent signInWithDeviceCodeIntent = new SignInWithDeviceCodeIntent(_rgnCore, null);
+            await signInWithDeviceCodeIntent.RequestDeviceCodeAsync(cancellationToken);
+            return signInWithDeviceCodeIntent;
+        }
+
         public void SendPasswordResetEmail(string email)
         {
             _rgnCore.ReadyMasterAuth.SendPasswordResetEmailAsync(email).ContinueWith(task => {
@@ -86,6 +103,9 @@ namespace RGN.Modules.SignIn
         {
             TryToSingInWithoutLink(email, password);
         }
+
+        internal void PatchSignInWithDeviceCodeFunction(Func<CancellationToken, Task<ISignInWithDeviceCodeIntent>> patchFunc = null)
+            => _signInWithDeviceCodePatch = patchFunc;
 
         private void TryToSingInWithoutLink(string email, string password)
         {
