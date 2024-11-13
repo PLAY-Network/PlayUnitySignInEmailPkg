@@ -65,7 +65,10 @@ namespace RGN.Modules.SignIn
                 return await _signInWithDeviceCodePatch(cancellationToken);
             }
 
-            SignInWithDeviceCodeIntent signInWithDeviceCodeIntent = new SignInWithDeviceCodeIntent(_rgnCore, null);
+            SignInWithDeviceCodeIntent signInWithDeviceCodeIntent = new SignInWithDeviceCodeIntent(_rgnCore);
+#if UNITY_WEBGL
+            signInWithDeviceCodeIntent.SetImmediateMode(true);
+#endif
             await signInWithDeviceCodeIntent.RequestDeviceCodeAsync(cancellationToken);
             return signInWithDeviceCodeIntent;
         }

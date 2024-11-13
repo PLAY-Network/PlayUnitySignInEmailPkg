@@ -7,20 +7,25 @@ using RGN.ImplDependencies.WebForm;
 
 namespace RGN.Modules.SignIn.DeviceFlow
 {
-    public class SignInWithDeviceCodeIntent : ISignInWithDeviceCodeIntent
+    internal class SignInWithDeviceCodeIntent : ISignInWithDeviceCodeIntent
     {
         private readonly IRGNCore _rgnCore;
         private readonly Action<string> _openUrlAction;
 
         private string _deviceCode;
         private bool _deviceCodeRequesting;
+        private bool _immediateModeEnabled;
 
         private const float POLLING_INTERVAL_SEC = 3f;
 
-        public SignInWithDeviceCodeIntent(IRGNCore rgnCore, Action<string> openUrlAction)
+        public SignInWithDeviceCodeIntent(IRGNCore rgnCore)
         {
             _rgnCore = rgnCore;
-            _openUrlAction = openUrlAction;
+        }
+
+        public void SetImmediateMode(bool value)
+        {
+            _immediateModeEnabled = value;
         }
 
         public async Task RequestDeviceCodeAsync(CancellationToken cancellationToken = default)
@@ -39,14 +44,22 @@ namespace RGN.Modules.SignIn.DeviceFlow
 
         public async Task<bool> ContinueInBrowserAsync(CancellationToken cancellationToken = default)
         {
-            while (_deviceCodeRequesting)
+            if (!_immediateModeEnabled)
             {
-                await Task.Yield();
+                while (_deviceCodeRequesting)
+                {
+                    await Task.Yield();
+                }
+            }
+
+            if (!_immediateModeEnabled && string.IsNullOrEmpty(_deviceCode))
+            {
+                await RequestDeviceCodeAsync(cancellationToken);
             }
 
             if (string.IsNullOrEmpty(_deviceCode))
             {
-                await RequestDeviceCodeAsync(cancellationToken);
+                throw new Exception($"Cannot continue in browser without device code. Immediate mode enabled: {_immediateModeEnabled}.");
             }
 
             IWebForm webFormService = _rgnCore.Dependencies.WebForm;
@@ -61,7 +74,7 @@ namespace RGN.Modules.SignIn.DeviceFlow
                 ? await _rgnCore.MasterAppUser.TokenAsync(false, cancellationToken)
                 : string.Empty;
 
-            webFormService.SignInWithDeviceCode(_deviceCode, idToken, _openUrlAction);
+            webFormService.SignInWithDeviceCode(_deviceCode, idToken);
 
             do
             {
