@@ -1,4 +1,4 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("GetReady.RGN.Tests.Runtime")]
-[assembly: InternalsVisibleTo("GetReady.RGN.Telegram.Runtime")]
+[assembly: InternalsVisibleTo("Play.Unity.Tests.Runtime")]
+[assembly: InternalsVisibleTo("Play.Unity.Telegram.Runtime")]
