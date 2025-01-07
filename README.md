@@ -1,1 +1,2 @@
-# Play SDK Email SignIn
+# Play SDK SignInEmail
+Package version: 0.16.0-dev.11
